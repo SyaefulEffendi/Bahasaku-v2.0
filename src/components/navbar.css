@@ -1,0 +1,190 @@
+/* --- Navbar Styling --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 3rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    z-index: 1000;
+}
+
+.navbar-spacer {
+    height: 80px; 
+    width: 100%;
+    visibility: hidden; 
+}
+
+
+.navbar-logo img {
+    height: 50px;
+}
+
+.navbar-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-right: 5rem;
+    display: flex;
+    gap: 2rem;
+}
+
+.navbar-menu a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 600;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.navbar-menu a:hover,
+.navbar-menu a.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+/* --- Dropdown Styling --- */
+.dropdown {
+    position: relative; 
+}
+
+.dropdown-menu {
+    display: none; 
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+    min-width: 180px;
+    z-index: 1001;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu li a {
+    padding: 0.5rem 1.5rem;
+    display: block;
+    border-bottom: none; 
+}
+
+/* --- Hamburger Menu Styling (Mobile) --- */
+.menu-toggle {
+    display: none; 
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 40px; 
+    height: 35px;
+    z-index: 1001;
+    background-color: transparent;
+    border: none;
+    border-radius: 5px;
+    padding: 5px;
+    margin-right: 2rem;
+}
+
+.hamburger-bar {
+    width: 100%;
+    height: 4px; 
+    background-color: #007bff;
+    transition: all 0.3s ease;
+    border-radius: 2px; /* Memberikan sudut yang lebih halus */
+}
+
+/* Tambahan untuk animasi hamburger */
+.menu-toggle.open .hamburger-bar:nth-child(1) {
+    transform: rotate(-45deg) translate(-8px, 8px); /* Sesuaikan translasi */
+}
+
+.menu-toggle.open .hamburger-bar:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.open .hamburger-bar:nth-child(3) {
+    transform: rotate(45deg) translate(-8px, -8px); /* Sesuaikan translasi */
+}
+
+/* --- KRITIS: MEDIA QUERY UNTUK MOBILE --- */
+@media (max-width: 768px) {
+    .navbar {
+        /* Kembalikan ke space-between untuk tata letak yang benar */
+        justify-content: space-between;
+        /* Kurangi padding horizontal agar konten tidak terpotong */
+        padding: 0.8rem 1.2rem;
+    }
+    
+    .navbar-logo img {
+        height: 40px;
+    }
+
+    .menu-toggle {
+        display: flex;
+    }
+
+    .navbar-menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        position: absolute;
+        /* Tinggi navbar diubah menjadi 60px agar lebih kompak */
+        top: 60px;
+        left: 0;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 1rem 0;
+        margin: 0;
+        text-align: center;
+        margin-right: 0;
+    }
+
+    .navbar-menu.open {
+        display: flex;
+    }
+    
+    .navbar-menu li {
+        width: 100%;
+    }
+
+    .navbar-menu a {
+        display: block;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .dropdown-menu {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+        padding: 0;
+    }
+}
+
+.navbar-username {
+    /* Anda bisa tambahkan style khusus, misal: */
+    font-weight: bold;
+    color: #007bff; /* Biru agar serasi */
+}
+
+/* Styling untuk link logout di dropdown */
+.logout-link {
+    color: #dc3545 !important; /* Warna merah untuk bahaya/logout */
+    font-weight: 600;
+    border-bottom: none !important; /* Hapus border aneh */
+}
+
+.logout-link:hover {
+    color: #fff !important;
+    background-color: #dc3545;
+    border-bottom: none !important;
+}
