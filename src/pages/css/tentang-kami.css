@@ -1,0 +1,290 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+.we-hero-banner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 250px;
+    background-color: #1C4975; /* Warna biru solid dari desain */
+    display: flex;
+    justify-content: center; /* Menengahkan secara horizontal */
+    align-items: center; /* Menengahkan secara vertikal */
+    overflow: hidden;
+}
+
+.hero-banner-bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2; /* Di atas warna background, di bawah teks */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.3; /* Sedikit transparan agar menyatu */
+}
+
+.hero-banner-title {
+    position: relative;
+    z-index: 3; /* Pastikan teks paling atas */
+    color: white;
+    font-size: 2.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1100px; /* Lebar maksimum konten */
+  margin: 0 auto; /* Tengah secara horizontal */
+  padding: 0 20px; /* Jarak dari tepi layar */
+}
+
+
+/* ================================== */
+/* BAGIAN 1: PENGENALAN TENTANG KAMI  */
+/* ================================== */
+.about-intro-section {
+  padding: 80px 0;
+  background-color: #ffffff;
+}
+
+.about-intro-container {
+  display: flex;
+  align-items: center;
+  gap: 60px; /* Jarak antara gambar dan teks */
+}
+
+.about-intro-image {
+  flex: 1; /* Mengambil setengah ruang yang tersedia */
+}
+
+.about-intro-image img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.about-intro-text {
+  flex: 1; /* Mengambil setengah ruang yang tersedia */
+}
+
+.about-intro-text h2 {
+  font-size: 2.5rem;
+  color: #1C4975;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.about-intro-text p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #555;
+}
+
+
+/* ================================== */
+/* BAGIAN 2: MENGAPA BISINDO PENTING  */
+/* ================================== */
+.bisindo-why-section {
+  /* KUNCI UTAMA: Membuat background split biru-putih dengan gradient */
+  background: linear-gradient(to bottom, #4E6E9B 50%, #ffffff 50%);
+  
+  /* Padding atas untuk menempatkan judul di area biru, padding bawah untuk spasi */
+  padding: 80px 0 100px 0;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: white;
+  margin-top: 0;
+  margin-bottom: 60px;
+}
+
+/* KOTAK PUTIH UTAMA (CARD) */
+.bisindo-card {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 15px;
+  border: 1px solid #dbe8f3;
+  box-shadow: 0 10px 30px rgba(100, 120, 150, 0.1); /* Shadow sedikit lebih jelas */
+}
+
+/* Sisa styling di bawah ini tetap sama, namun disertakan agar lengkap */
+
+.bisindo-card-image {
+  flex: 0 0 35%;
+  align-self: flex-end;
+}
+
+.bisindo-card-image img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bisindo-card-points {
+  flex: 1;
+}
+
+.bisindo-card-points ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bisindo-card-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.bisindo-card-points li:not(:last-child) {
+  margin-bottom: 30px;
+}
+
+.point-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background-color: #3b7cb8;
+  border-radius: 50%;
+  margin-top: 5px;
+}
+
+.point-text h3 {
+  font-size: 1.5rem;
+  color: #3b7cb8;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.point-text p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+
+/* ================================================= */
+/* STYLING RESPONSIVE UNTUK TAMPILAN MOBILE          */
+/* (Tambahkan ini di bagian paling akhir file CSS)   */
+/* ================================================= */
+
+@media (max-width: 768px) {
+
+  /* ===== PENYESUAIAN UMUM ===== */
+  .container {
+    padding: 0 15px; /* Kurangi padding samping di mobile */
+  }
+
+  .hero-banner-title,
+  .about-intro-text h2,
+  .section-title {
+    font-size: 2rem; /* Kecilkan ukuran semua judul utama */
+    line-height: 1.3;
+  }
+  
+  /* ===== BAGIAN 1: PENGENALAN TENTANG KAMI ===== */
+  .about-intro-section {
+    padding: 40px 0; /* Kurangi padding atas/bawah */
+  }
+
+  .about-intro-container {
+    flex-direction: column; /* KUNCI: Mengubah layout menjadi tumpukan vertikal */
+    gap: 30px; /* Atur jarak vertikal */
+  }
+  
+  .about-intro-text {
+    text-align: center; /* Agar teks rapi di tengah */
+  }
+
+  /* ===== BAGIAN 2: MENGAPA BISINDO PENTING ===== */
+  .bisindo-why-section {
+    padding: 60px 0;
+  }
+  
+  .section-title {
+    margin-bottom: 40px;
+  }
+
+  .bisindo-card {
+    flex-direction: column; /* KUNCI: Mengubah layout card menjadi tumpukan vertikal */
+    padding: 30px 20px;
+  }
+
+  .bisindo-card-image {
+    align-self: center; /* Posisikan gambar di tengah, bukan di bawah */
+    flex-basis: auto; /* Hapus lebar tetap */
+    width: 60%; /* Atur lebar gambar agar tidak terlalu besar */
+    margin-bottom: 20px;
+  }
+  
+  .point-text h3 {
+    font-size: 1.3rem;
+  }
+
+}
+
+/* ================================================= */
+/* BAGIAN 3: STYLING ANIMASI (PERBAIKAN)             */
+/* ================================================= */
+
+/* --- Keyframes (Definisi Animasi) --- */
+/* Bagian ini tetap sama dan tidak perlu diubah jika sudah ada */
+@keyframes fadeInUp { /* ... */ }
+@keyframes slideInLeft { /* ... */ }
+@keyframes slideInRight { /* ... */ }
+@keyframes scaleUp { /* ... */ }
+
+
+/* --- Kelas untuk Animasi Page Load (Hero Banner) --- */
+.animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+
+/* --- Kelas untuk Animasi Saat Scroll (PERBAIKAN) --- */
+
+/* KELAS .animate-on-scroll SEKARANG HANYA SEBAGAI PENANDA UNTUK JAVASCRIPT,
+  TIDAK PERLU STYLE APAPUN.
+*/
+
+/* Atur kondisi awal (tersembunyi) untuk SETIAP elemen yang akan dianimasikan, 
+  bukan pada pembungkusnya. 
+*/
+.animate-slide-in-left,
+.animate-slide-in-right,
+.animate-scale-up {
+    opacity: 0;
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+/* Atur posisi awal yang spesifik untuk tiap animasi */
+.animate-slide-in-left {
+    transform: translateX(-50px);
+}
+.animate-slide-in-right {
+    transform: translateX(50px);
+}
+.animate-scale-up {
+    transform: scale(0.95) translateY(15px);
+}
+
+
+/* Saat pembungkus (.animate-on-scroll) mendapat kelas .is-visible,
+  maka ubah style elemen animasi di dalamnya ke kondisi akhir (terlihat).
+*/
+.animate-on-scroll.is-visible .animate-slide-in-left,
+.animate-on-scroll.is-visible .animate-slide-in-right,
+.animate-on-scroll.is-visible.animate-scale-up {
+    opacity: 1;
+    transform: none; /* Mengembalikan transform ke posisi normal */
+}

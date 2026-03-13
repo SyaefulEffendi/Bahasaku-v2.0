@@ -1,0 +1,240 @@
+.kontak-hero-banner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 250px;
+    background-color: #1C4975; /* Warna biru solid dari desain */
+    display: flex;
+    justify-content: center; /* Menengahkan secara horizontal */
+    align-items: center; /* Menengahkan secara vertikal */
+    overflow: hidden;
+}
+
+/* Gambar dekoratif di latar belakang */
+.hero-banner-bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2; /* Di atas warna background, di bawah teks */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.3; /* Sedikit transparan agar menyatu */
+}
+
+/* Teks Judul "Kontak" */
+.hero-banner-title {
+    position: relative;
+    z-index: 3; /* Pastikan teks paling atas */
+    color: white;
+    font-size: 2.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Section wrapper untuk form */
+.form-section {
+    position: relative;
+    background-color: #ffffff;
+    padding: 150px 20px 50px 20px; /* Padding atas besar untuk memberi ruang bagi form yang naik */
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Container utama form */
+.form-container {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.26);
+    width: 100%;
+    max-width: 550px;
+    z-index: 2; /* Di atas elemen dekoratif */
+    text-align: center;
+    margin-top: -20px;
+    margin-bottom: 50px; /* TRIK: Menggeser form ke atas agar menimpa banner */
+    position: relative;
+}
+
+/* Grup (label + input) */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #1c4975;
+    box-shadow: 0 0 5px rgba(28, 73, 117, 0.2);
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+/* Tombol Kirim */
+.kirim-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #1c4975;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.kirim-btn:hover {
+    background-color: #15385a;
+}
+
+/* Styling Elemen Dekoratif Form */
+.dots-left-form {
+    position: absolute;
+    top: 100px;
+    left: 40px;
+    width: 100px;
+    z-index: 1;
+}
+
+.shape-right-form {
+    position: absolute;
+    top: 50%;
+    right: 0px;
+    transform: translateY(-50%);
+    width: 7%;
+    z-index: 1;
+}
+
+.shape-left-form {
+    position: absolute;
+    bottom: -40px;
+    left: 0;
+    width: 7%;
+    z-index: 1;
+}
+
+/* Styling Pop-up */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: left;
+}
+
+.popup-content h2 {
+    margin-top: 0;
+    color: #1c4975;
+}
+
+.popup-content p {
+    line-height: 1.6;
+    word-wrap: break-word;
+}
+
+.popup-close-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #1c4975;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    float: right;
+}
+
+.popup-close-btn:hover {
+    background-color: #15385a;
+}
+
+/* ================================================== */
+/* TAMBAHKAN KODE INI DI AKHIR FILE Kontak.css        */
+/* ================================================== */
+
+/* Tambahkan cursor pointer ke overlay agar terlihat bisa di-klik */
+.popup-overlay {
+    cursor: pointer;
+}
+
+/* Konten pop-up jangan terpengaruh cursor pointer dari overlay */
+.popup-content {
+    cursor: default;
+}
+
+/* Container untuk tombol-tombol di pop-up */
+.popup-actions {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end; /* Memposisikan tombol ke kanan */
+    gap: 10px; /* Memberi jarak antar tombol */
+}
+
+/* Tombol untuk memperbaiki (tampilan sekunder) */
+.popup-edit-btn {
+    padding: 10px 20px;
+    background-color: #f0f0f0; /* Warna abu-abu terang */
+    color: #333; /* Teks gelap */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+
+.popup-edit-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* Mengganti nama class tombol lama agar lebih jelas */
+.popup-confirm-btn {
+    padding: 10px 20px;
+    background-color: #1c4975; /* Warna biru utama */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.popup-confirm-btn:hover {
+    background-color: #15385a;
+}

@@ -1,0 +1,602 @@
+/* --- General Body and Layout Styling --- */
+html, body {
+    height: 100%; 
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: sans-serif;
+    background-color: #f0f2f5;
+}
+
+.dashboard-container {
+    overflow-x: hidden;
+}
+
+/* --- Navbar Styling --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 3rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    z-index: 1000;
+}
+
+.navbar-spacer {
+    height: 80px; 
+    width: 100%;
+    visibility: hidden; 
+}
+
+
+.navbar-logo img {
+    height: 50px;
+}
+
+.navbar-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-right: 5rem;
+    display: flex; /* Kunci perbaikan: Memastikan Flexbox aktif */
+    gap: 2rem;
+}
+
+.navbar-menu a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 600;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.navbar-menu a:hover,
+.navbar-menu a.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+/* --- Dropdown Styling --- */
+.dropdown {
+    position: relative; 
+}
+
+.dropdown-menu {
+    display: none; 
+    position: absolute;
+    top: 100%; 
+    left: 0;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+    min-width: 180px; 
+    z-index: 1001;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu li a {
+    padding: 0.5rem 1.5rem;
+    display: block; 
+    border-bottom: none; 
+}
+
+
+/* --- Hamburger Menu Styling (Mobile) --- */
+.menu-toggle {
+    display: none; 
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+    z-index: 1001; 
+}
+
+.hamburger-bar {
+    width: 100%;
+    height: 3px;
+    background-color: #333;
+    transition: all 0.3s ease;
+}
+
+/* --- Hero Section Styling --- */
+.hero-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3.7rem 7rem; 
+    background-color: #1C3C80;
+    background-image: url('../Image/garis.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    max-width: 50%;
+    z-index: 1;
+}
+
+.hero-content h1 {
+    font-size: 1.875rem;
+    color: white;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    line-height: 3rem;
+}
+
+.hero-content p {
+    font-size: 1.25rem;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.download-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.download-buttons .download-btn-img {
+    height: 50px;
+    width: auto;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.download-buttons .download-btn-img:hover {
+    transform: scale(1.05);
+}
+
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    z-index: 1;
+}
+
+/* --- About Us Section Styling --- */
+.about-us-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem 7rem;
+    background-color: #fff;
+    gap: 2rem;
+    position: relative;
+    overflow: hidden;
+    background-image: url('../Image/floating-lingkaran.png'), url('../Image/floating-titik.png');
+    background-repeat: no-repeat, no-repeat;
+    background-position: right bottom, left top;
+    background-size: 7%, 8%;
+}
+
+.about-us-section > * {
+    z-index: 1;
+}
+
+.about-image {
+    flex-shrink: 0;
+    max-width: 50%;
+}
+
+.about-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.about-content {
+    max-width: 50%;
+}
+
+.about-content h2 {
+    font-size: 2.5rem;
+    color: #1a237e;
+    margin-bottom: 1rem;
+}
+
+.about-content p {
+    font-size: 1.2rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.learn-more-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #1C3C80;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.learn-more-btn:hover {
+    background-color: #4c71c0;
+}
+
+/* --- Services Section Styling (Updated) --- */
+.services-section {
+    padding: 4rem 7rem;
+    text-align: center;
+    background-color: #f0f2f5;
+}
+
+.services-section h2 {
+    font-size: 2.5rem;
+    color: #1a237e;
+    margin-bottom: 2rem;
+    font-weight: 700;
+}
+
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.service-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    color: #fff;
+    overflow: hidden;
+    text-align: left;
+    height: auto;
+}
+
+.service-card:nth-child(1) {
+    background: linear-gradient(145deg, #6a93cb, #88b1d9);
+}
+
+.service-card:nth-child(2) {
+    background: linear-gradient(145deg, #3a5c9f, #81a8c9);
+}
+
+.service-card:nth-child(3) {
+    background: linear-gradient(145deg, #3a5c9f, #81a8c9);
+}
+
+.service-card:nth-child(4) {
+    background: linear-gradient(145deg, #6a93cb, #88b1d9);
+}
+
+.card-image-container {
+    width: 100%;
+    height: 200px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card-image-1 {
+    width: 60% !important; 
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+.card-image-2 {
+    width: 50% !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+.card-image-3 {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+.card-image-4 {
+    width: 50% !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+.card-content-container {
+    text-align: center;
+}
+
+.service-card h3 {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.service-card p {
+    font-size: 0.9rem;
+    color: #fff;
+    line-height: 1.4;
+}
+
+.service-card .card-image-1,
+.service-card .card-image-2,
+.service-card .card-image-3,
+.service-card .card-image-4 {
+    position: relative; /* Ubah dari absolute */
+    left: auto;
+    transform: none;
+    top: auto;
+    width: auto;
+    height: auto;
+}
+
+
+/* --- Download App Section Styling --- */
+.download-app-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem 7rem;
+    background: #1C3C80;
+    gap: 2rem;
+}
+
+.download-content {
+    max-width: 50%;
+    text-align: left;
+}
+
+.download-content p {
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 1.5rem;
+}
+
+.download-btn {
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #1C3C80;
+    background-color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.download-btn:hover {
+    background-color: rgb(170, 165, 165);
+}
+
+.download-image img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* --- Reasons Section Styling --- */
+.reasons-section {
+    padding: 3.7rem 7rem;
+    text-align: center;
+    background-color: #fff;
+    position: relative;
+    z-index: 1;
+}
+
+.reasons-section::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    background: #5B69C2;
+    z-index: -1;
+}
+
+.reasons-section h2 {
+    font-size: 1.7rem;
+    color: #1a237e;
+    margin-bottom: 5rem;
+    font-weight: 700;
+}
+
+.reasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.reason-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    padding: 2rem;
+    text-align: center;
+    color: #333;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.reason-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.reason-icon img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+}
+
+.reason-card h3 {
+    font-size: 1.2rem;
+    color: #1a237e;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.reason-card p {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* --- Footer Styling --- */
+.footer-top {
+    background-color: white;
+    color: black;
+    padding: 3rem 7rem;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 2rem;
+}
+
+.footer-column {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 200px;
+}
+
+.footer-logo img {
+    height: 60px;
+    margin-bottom: 1rem;
+}
+
+.footer-column h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.footer-column p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.footer-column p.footer-title,
+.footer-column p.footer-address {
+    color: black;
+}
+
+.footer-column a {
+    color: black;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-column a:hover {
+    color: #88b1d9;
+}
+
+.social-media-column {
+    text-align: right;
+}
+
+.social-icons img {
+    height: 30px;
+    margin-right: 10px;
+    transition: transform 0.3s;
+}
+
+.social-icons img:hover {
+    transform: scale(1.1);
+}
+
+.social-media-column .download-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.social-media-column .download-buttons img {
+    height: 40px;
+    width: auto;
+}
+
+.footer-bottom {
+    background-color: #1C3C80;
+    text-align: center;
+    padding: 1rem 7rem;
+}
+
+.footer-bottom p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: white;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    /* Perbaikan untuk Navbar */
+    .navbar {
+        padding: 1rem 1rem; /* Kurangi padding horizontal */
+    }
+
+    .navbar-menu {
+        /* Tambahkan properti untuk tata letak mobile */
+        width: 100%;
+        left: 0;
+        text-align: center;
+        margin-right: 0;
+    }
+
+    .menu-toggle {
+        display: flex;
+    }
+
+    /* Perbaikan untuk semua section utama */
+    .hero-section,
+    .about-us-section,
+    .services-section,
+    .reasons-section,
+    .download-app-section {
+        padding: 2rem 1rem; /* Kurangi padding horizontal untuk semua section */
+        flex-direction: column;
+        text-align: center;
+    }
+
+    /* Perbaikan untuk konten di dalam section */
+    .hero-content,
+    .about-content,
+    .download-content {
+        max-width: 100%;
+    }
+
+    /* Perbaikan untuk grid kartu */
+    .services-grid,
+    .reasons-grid {
+        grid-template-columns: 1fr; /* Pastikan hanya satu kolom */
+        gap: 1rem; /* Kurangi jarak antar kartu */
+        padding: 0;
+    }
+
+    /* Perbaikan untuk service card */
+    .service-card {
+        padding: 1rem; /* Kurangi padding kartu */
+        height: auto; /* Biarkan tinggi kartu menyesuaikan konten */
+    }
+}

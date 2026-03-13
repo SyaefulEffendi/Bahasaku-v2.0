@@ -1,0 +1,233 @@
+/* Reset & Background */
+body {
+    font-family: 'Arial', sans-serif; /* Ganti font jika perlu */
+    background-color: #EBF2FA; /* Warna background dari desain */
+    margin: 0;
+    padding: 0;
+}
+
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Kotak Register Utama */
+.register-box {
+    display: flex;
+    width: 900px;
+    max-width: 100%;
+    background-color: #ffffff;
+    border-radius: 24px; /* Sesuai desain */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Bagian Kiri (Form) */
+.register-form-section {
+    flex-basis: 55%; /* Form lebih besar sedikit */
+    padding: 48px;
+    box-sizing: border-box;
+}
+
+.register-form-section h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 32px;
+}
+
+/* Grup Input */
+.input-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    padding-right: 45px; /* Ruang untuk ikon */
+    font-size: 16px;
+    border: 1px solid #DDE2E7;
+    border-radius: 8px;
+    box-sizing: border-box; /* Penting */
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #007BFF;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+.input-icon,
+.password-toggle-icon {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    font-size: 22px;
+    color: #888;
+}
+
+.password-toggle-icon {
+    cursor: pointer;
+}
+
+/* Input Berdampingan (Tempat & Tanggal) */
+.input-row {
+    display: flex;
+    gap: 16px;
+}
+.input-row .input-group {
+    flex: 1; /* Bagi rata */
+}
+
+/* --- STYLING BARU UNTUK TIPE PENGGUNA --- */
+.user-type-options {
+    display: flex;
+    gap: 10px;
+}
+
+.user-type-box {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #DDE2E7;
+    border-radius: 8px;
+    background-color: #fff;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s;
+}
+
+.user-type-box:hover {
+    border-color: #aaa;
+}
+
+.user-type-box.active {
+    border-color: #007BFF;
+    background-color: #f0f7ff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+.user-type-box strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.user-type-box span {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    margin-top: 4px;
+}
+/* ------------------------------------------- */
+
+
+/* Tombol Daftar */
+.register-button {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px; /* Jarak dari input password */
+}
+
+.register-button:hover {
+    background-color: #0056b3;
+}
+
+.register-button:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+}
+
+/* Link Login */
+.login-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: #555;
+}
+
+.login-link a {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Bagian Kanan (Gambar) */
+.register-image-section {
+    flex-basis: 45%;
+    background: url('../Image/right.jpg') no-repeat center center; /* Ganti dengan path gambar Anda */
+    background-size: cover;
+}
+
+/* Pesan Error/Sukses */
+.error-message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+    background-color: #f8d7da;
+    color: #721c24;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.success-message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+    background-color: #d4edda;
+    color: #155724;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Responsif */
+@media (max-width: 800px) {
+    .register-box {
+        flex-direction: column;
+        width: 100%;
+        max-width: 450px;
+    }
+
+    .register-image-section {
+        display: none; /* Sembunyikan gambar di HP */
+    }
+
+    .register-form-section {
+        flex-basis: 100%;
+        padding: 32px;
+    }
+    
+    .input-row {
+        flex-direction: column;
+        gap: 0; /* Hapus gap karena sudah ditangani margin-bottom .input-group */
+    }
+
+    .user-type-options {
+        flex-direction: column;
+    }
+}

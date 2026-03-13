@@ -1,0 +1,201 @@
+/* Stisla-like Dashboard Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    height: 100vh;
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    background-color: #1B83D0 !important;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+}
+
+.sidebar.open {
+    transform: translateX(0);
+}
+
+.sidebar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar h5 {
+    font-weight: 600;
+    color: #fff;
+}
+
+.sidebar-logo {
+    height: 50px;
+    width: auto;
+    margin-right: 15px;
+}
+
+.nav-link-stisla {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    padding: 12px 16px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-link-stisla.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: bold;
+}
+
+.nav-link-stisla:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Submenu styles (dropdown items) */
+.nav-item .submenu {
+    padding-left: 8px;
+    display: none; /* hidden by default */
+    transition: all 0.18s ease;
+}
+
+.nav-item .submenu .nav-link-stisla {
+    background: transparent;
+    color: rgba(255,255,255,0.9);
+    padding: 8px 24px;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+}
+
+.nav-item .submenu .nav-link-stisla.active {
+    background-color: rgba(255,255,255,0.08);
+    font-weight: 600;
+}
+
+/* Show submenu on parent hover or when .show class is present */
+.nav-item.user-admin-dropdown.show .submenu {
+    display: block;
+}
+
+/* make the label look clickable */
+.nav-item.user-admin-dropdown .nav-link-stisla[role="button"] {
+    cursor: pointer;
+}
+
+/* Improve submenu spacing on small screens */
+@media (max-width: 991.98px) {
+    .nav-item .submenu {
+        padding-left: 0;
+    }
+    .nav-item .submenu .nav-link-stisla {
+        padding-left: 20px;
+    }
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+    min-width: 0;
+}
+
+.main-content-inner {
+    padding: 30px;
+}
+
+.top-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+.top-navbar h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1B83D0;
+}
+
+.summary-card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.1);
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+}
+
+.summary-card .card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.card-icon {
+    margin-bottom: 10px;
+}
+
+.card-text {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #ccc;
+    border-radius: 50%;
+}
+
+.main-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #343a40;
+    margin-bottom: 25px;
+}
+
+/* Styling untuk search bar */
+.search-bar-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+    max-width: 400px; /* Batasi lebar search bar */
+}
+
+.search-input {
+    padding-left: 40px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+/* Responsive Styles */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+
+    .main-content-inner {
+        padding: 15px;
+    }
+}

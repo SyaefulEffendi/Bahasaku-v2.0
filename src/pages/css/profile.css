@@ -1,0 +1,113 @@
+/* Import Font dari Google Fonts (Opsional, tapi disarankan) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f6; /* Latar belakang body utama yang netral */
+}
+
+/* Latar belakang utama halaman profil */
+.profile-background {
+    background-color: #f4f7f6; /* Warna abu-abu muda yang lembut */
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Styling untuk semua kartu */
+.profile-sidebar-card,
+.profile-details-card {
+    border: none;
+    border-radius: 15px; /* Sudut yang lebih tumpul */
+    transition: all 0.3s ease-in-out;
+    background-color: #ffffff; /* Warna kartu putih bersih */
+}
+
+/* Bayangan yang lebih modern */
+.shadow {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Wrapper untuk foto profil */
+.profile-pic-wrapper {
+    width: 130px;
+    height: 130px;
+    position: relative;
+}
+
+.profile-pic {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 4px solid #0D6EFD; /* Border dengan warna primer */
+}
+
+/* Tombol edit foto */
+.profile-pic-wrapper .edit-pic-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #fff;
+    background-color: #ffffff !important; /* Paksa latar belakang putih */
+    color: #0D6EFD !important; /* Paksa warna ikon menjadi biru */
+    padding: 0; /* Hapus padding default dari button */
+}
+
+/* Mengatur warna ikon saat tombol di-hover */
+.profile-pic-wrapper .edit-pic-btn:hover {
+    background-color: #0D6EFD !important;
+    color: #ffffff !important;
+}
+
+/* Styling untuk form */
+.form-label {
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 0.5rem;
+}
+
+.input-group-text {
+    background-color: #e9ecef;
+    border-right: none;
+    color: #0D6EFD;
+}
+
+.form-control {
+    border-left: none;
+    padding-left: 0.5rem;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #86b7fe;
+}
+
+.form-control:disabled {
+    background-color: #f8f9fa; /* Warna disable yang lebih terang */
+    cursor: not-allowed;
+    border-left: 1px solid #dee2e6; /* Kembalikan border kiri saat disable */
+}
+
+.form-control:disabled + .input-group-text {
+    background-color: #f8f9fa;
+}
+
+/* Styling untuk tombol */
+.btn {
+    font-weight: 500;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+/* Penyesuaian untuk tampilan mobile */
+@media (max-width: 991.98px) {
+    .profile-sidebar-card {
+        margin-bottom: 2rem;
+    }
+}

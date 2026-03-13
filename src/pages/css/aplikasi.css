@@ -1,0 +1,254 @@
+
+html, body {
+    height: 100%; 
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: sans-serif;
+    background-color: #f0f2f5;
+}
+
+.hero-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3.7rem 7rem; 
+    background-color: #1C3C80;
+    background-image: url('../Image/garis.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    max-width: 50%;
+    z-index: 1;
+}
+
+.hero-content h1 {
+    font-size: 1.875rem;
+    color: white;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    line-height: 3rem;
+}
+
+.hero-content p {
+    font-size: 1.25rem;
+    color: white;
+    margin-bottom: 2rem;
+}
+
+.download-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.download-buttons .download-btn-img {
+    height: 50px;
+    width: auto;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.download-buttons .download-btn-img:hover {
+    transform: scale(1.05);
+}
+
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    z-index: 1;
+}
+
+/* === KODE CSS BARU UNTUK FEATURES SECTION === */
+
+.features-section {
+    padding: 5rem 7rem;
+    background-color: #f0f2f5; /* Sesuai dengan warna background body */
+    text-align: center;
+    position: relative;
+    overflow: hidden; /* Mencegah dekorasi keluar dari section */
+}
+
+.features-section h2 {
+    text-align: center;
+    font-size: 2rem;
+    color: #1C3C80;
+    margin-bottom: 3rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 2;
+}
+
+.dots-pattern {
+    position: absolute;
+    top: 3rem;
+    left: -20px;
+    width: 150px;
+    z-index: 1;
+}
+
+.blue-circles {
+    position: absolute;
+    top: 3rem;
+    right: -1px;
+    width: 120px;
+    z-index: 1;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.feature-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: left;
+}
+
+.feature-card .feature-img {
+    max-width: 120px;
+    height: auto;
+}
+
+.feature-content h3 {
+    font-size: 1.25rem;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+}
+
+.feature-content p {
+    font-size: 1rem;
+    color: #666;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* --- Media Query untuk Responsivitas --- */
+@media (max-width: 1024px) {
+    .features-section {
+        padding: 4rem 2rem;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dots-pattern, .blue-circles {
+        display: none; /* Sembunyikan elemen dekoratif di layar kecil */
+    }
+}
+
+@media (max-width: 768px) {
+    .feature-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .feature-card .feature-img {
+        max-width: 100px;
+    }
+}
+
+/* === KODE CSS BARU UNTUK STATS SECTION === */
+
+.stats-section {
+    background-color: #1C3C80;
+    padding: 4rem 2rem;
+}
+
+.stats-card {
+    background-color: white;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+}
+
+.stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    position: relative;
+}
+
+/* Garis pemisah vertikal */
+.stat-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 60%;
+    background-color: #e0e0e0;
+}
+
+.stat-item img {
+    height: 40px;
+    margin-bottom: 1rem;
+}
+
+.stat-item h3 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1C3C80;
+    margin: 0;
+}
+
+.stat-item p {
+    font-size: 1rem;
+    color: #555;
+    margin-top: 0.5rem;
+}
+
+/* --- Media Query untuk Responsivitas --- */
+@media (max-width: 768px) {
+    .stats-card {
+        flex-direction: column;
+        gap: 2.5rem;
+        padding: 2.5rem;
+    }
+
+    .stat-item:not(:last-child)::after {
+        display: none; /* Sembunyikan garis pemisah di layar kecil */
+    }
+}
+
+@media (max-width: 768px) {
+    /* Perbaikan untuk semua section utama */
+    .hero-section,
+    .download-app-section {
+        padding: 2rem 1rem; /* Kurangi padding horizontal untuk semua section */
+        flex-direction: column;
+        text-align: center;
+    }
+
+    /* Perbaikan untuk konten di dalam section */
+    .hero-content {
+        max-width: 100%;
+    }
+}
