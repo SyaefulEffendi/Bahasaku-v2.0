@@ -6,7 +6,9 @@ import { useAuth } from '../context';
 import { MdEmail, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { FcGoogle } from 'react-icons/fc';
 
-const API_URL = "http://localhost:8080/api/users/login"; 
+import API_BASE_URL from '../config/apiConfig';
+
+const API_URL = `${API_BASE_URL}/users/login`;
 
 const Login = () => {
     const [email, setEmail] = useState('');

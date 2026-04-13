@@ -6,6 +6,7 @@ import { FaVideo, FaStop } from 'react-icons/fa';
 import Webcam from 'react-webcam';
 import axios from 'axios';
 import './css/video-to-text.css';
+import API_BASE_URL from '../config/apiConfig';
 
 function VideoToText() {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -44,8 +45,7 @@ function VideoToText() {
             const formData = new FormData();
             formData.append('image', blob, 'capture.jpg');
 
-            // Ganti port 8080 sesuai konfigurasi docker-compose Anda
-            const response = await axios.post('http://localhost:8080/api/ai/predict', formData, {
+            const response = await axios.post(`${API_BASE_URL}/ai/predict`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 

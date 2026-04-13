@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 // 1. Impor useNavigate dan useAuth
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context'; // <-- Sesuaikan path ini jika perlu
-import logo from '../Image/Logo 2 2.png';
+import logo from '../pages/Image/Logo 2 2.png';
 import './navbar.css';
 
 function Navbar() {

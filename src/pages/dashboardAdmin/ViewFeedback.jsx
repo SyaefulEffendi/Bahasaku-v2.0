@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Container, Table, Button, Badge, Modal, Form } from 'react-bootstrap';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
 
 const ViewFeedback = memo(() => {
     const [feedbacks, setFeedbacks] = useState([]);

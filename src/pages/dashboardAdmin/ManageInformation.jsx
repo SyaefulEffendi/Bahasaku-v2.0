@@ -3,7 +3,7 @@ import { Container, Table, Button, Form, Modal, Image } from 'react-bootstrap';
 import { FaPlus, FaTrash, FaEdit } from 'react-icons/fa'; // Tambah FaEdit
 import SearchInput from './SearchInput';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
 
 const ManageInformation = memo(({ searchTerm, setSearchTerm }) => {
     const [infos, setInfos] = useState([]);

@@ -18,7 +18,7 @@ import ViewFeedback from './dashboardAdmin/ViewFeedback';
 // --- IMPORT KOMPONEN BARU ---
 import ManageInformation from './dashboardAdmin/ManageInformation';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+import API_BASE_URL from '../config/apiConfig'; // Sesuaikan path jika berbeda
 
 const DashboardAdmin = () => {
     const { user } = useAuth();

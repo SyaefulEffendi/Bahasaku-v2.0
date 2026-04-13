@@ -5,7 +5,9 @@ import './css/register.css'; // Path ke CSS Anda
 // 1. Impor ikon yang benar
 import { MdEmail, MdVisibility, MdVisibilityOff, MdLocationOn, MdCalendarToday } from 'react-icons/md';
 
-const API_URL = "http://localhost:8080/api/users/register"; 
+import API_BASE_URL from '../config/apiConfig';
+
+const API_URL = `${API_BASE_URL}/users/register`;
 
 const Register = () => {
     const [formData, setFormData] = useState({
