@@ -1,183 +1,233 @@
-# rekam_kata_webcam.py
+# rekam_kata_webcam_v2.py
+# ─────────────────────────────────────────────────────────────────────────────
+# Rekam dataset kata BISINDO menggunakan pendekatan hybrid feature
+# Mendukung: 1 tangan, 2 tangan, 2 tangan bertumpuk (oklusi)
+#
+# Perubahan dari V1:
+#   - Menggunakan MediaPipe Holistic (bukan Hands saja)
+#   - 156 fitur per frame (bukan 63/126)
+#   - TIDAK membuang frame saat tangan bertumpuk
+#   - Optical flow sebagai fitur gerakan
+#   - Satu CSV universal untuk semua kata
+#
+# Jalankan: python rekam_kata_webcam_v2.py
+# ─────────────────────────────────────────────────────────────────────────────
+
 import cv2
-import mediapipe as mp
 import numpy as np
 import pandas as pd
 import os
+import sys
 
-mp_hands   = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-hands = mp_hands.Hands(
-    max_num_hands=2,
-    min_detection_confidence=0.6,
-    min_tracking_confidence=0.5
-)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from feature_extractor import FeatureExtractor, N_FITUR, pad_or_trim, normalize_sequence
 
-# ============================================================
-# UBAH DI SINI setiap ganti kata
-TARGET_KATA   = 'hallo'      # ← ganti: 'hallo' / 'perkenalkan' / 'nama' / 'aku'
-TARGET_VIDEO  = 30           # jumlah video per kata (jangan diubah)
-FRAME_PER_VIDEO = 30         # jumlah frame per video (jangan diubah)
-# ============================================================
+# ════════════════════════════════════════════════════════════════════
+#  KONFIGURASI — Ubah di sini setiap ganti kata
+# ════════════════════════════════════════════════════════════════════
+TARGET_KATA     = 'perkenalkan'  # kata yang akan direkam
+TARGET_VIDEO    = 50             # target jumlah video per kata
+FRAME_PER_VIDEO = 30             # frame per video (jangan diubah)
 
-# Konfigurasi otomatis berdasarkan kata
-KATA_1_TANGAN = {'hallo', 'aku'}
-KATA_2_TANGAN = {'perkenalkan', 'nama'}
-
-IS_1_TANGAN  = TARGET_KATA.lower() in KATA_1_TANGAN
-BUTUH_TANGAN = 1 if IS_1_TANGAN else 2
-N_FITUR      = 63 if IS_1_TANGAN else 126
-
-# Path CSV output
-CSV_DIR  = '../../dataset/kata'
-CSV_PATH = os.path.join(CSV_DIR, f'dataset_kata_{"1t" if IS_1_TANGAN else "2t"}.csv')
+# Path output
+CSV_DIR  = r'D:\Syaeful\Kuliah\Semester 4\Bahasaku V2\web\Server\dataset\kata'
+CSV_PATH = os.path.join(CSV_DIR, 'dataset_kata_v2.csv')
 os.makedirs(CSV_DIR, exist_ok=True)
+# ════════════════════════════════════════════════════════════════════
 
-# Buat nama kolom
-if IS_1_TANGAN:
-    COLS = [f'{a}{i}' for i in range(21) for a in ['x','y','z']] + ['label']
-else:
-    COLS = [f'{a}{i}'   for i in range(21) for a in ['x','y','z']] + \
-           [f'{a}{i}_2' for i in range(21) for a in ['x','y','z']] + ['label']
+# Nama kolom CSV (156 fitur + label)
+FITUR_COLS = [f'f{i}' for i in range(N_FITUR)]
+ALL_COLS   = FITUR_COLS + ['label']
 
-# Hitung video yang sudah ada
+# Load CSV yang sudah ada
 if os.path.exists(CSV_PATH):
     df_lama    = pd.read_csv(CSV_PATH)
     video_lama = len(df_lama[df_lama['label'] == TARGET_KATA]) // FRAME_PER_VIDEO
 else:
-    df_lama    = pd.DataFrame(columns=COLS)
+    df_lama    = pd.DataFrame(columns=ALL_COLS)
     video_lama = 0
 
-print(f"Kata target   : {TARGET_KATA.upper()}")
-print(f"Tipe          : {'1 tangan' if IS_1_TANGAN else '2 tangan'}")
-print(f"Video ada     : {video_lama}/{TARGET_VIDEO}")
-print(f"Perlu tambah  : {TARGET_VIDEO - video_lama} video")
+print("=" * 55)
+print(f"  REKAM KATA: {TARGET_KATA.upper()}")
+print("=" * 55)
+print(f"  Video sudah ada : {video_lama}/{TARGET_VIDEO}")
+print(f"  Perlu tambah    : {max(0, TARGET_VIDEO - video_lama)} video")
+print(f"  Fitur per frame : {N_FITUR}")
 print()
-print("PETUNJUK:")
-print(f"  ENTER → mulai rekam 1 video ({FRAME_PER_VIDEO} frame)")
-print(f"  Lakukan gerakan '{TARGET_KATA}' saat countdown dimulai")
-print(f"  Q     → keluar & simpan")
+print("  PETUNJUK:")
+print(f"  1. Siapkan posisi")
+print(f"  2. Tekan ENTER untuk mulai rekam")
+print(f"  3. Lakukan gerakan '{TARGET_KATA}' saat MEREKAM")
+print(f"  4. Rekam ulang jika gagal")
+print(f"  5. Tekan Q untuk simpan & keluar")
+print()
+print("  TIPS TANGAN BERTUMPUK:")
+print("  - Pastikan kedua pergelangan tangan terlihat kamera")
+print("  - Lakukan gerakan perlahan di awal")
+print("  - Status 'OKLUSI' di layar = tumpukan terdeteksi ✓")
+print("=" * 55)
 
-cap        = cv2.VideoCapture(0)
-data_baru  = []
-video_done = 0  # video yang berhasil direkam sesi ini
 
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        break
+def draw_ui(frame, total_done, tangan_info, recording=False,
+            frame_ke=0, occlusion=False, flow_mag=0.0):
+    h, w = frame.shape[:2]
 
-    frame      = cv2.flip(frame, 1)
-    h, w, _    = frame.shape
-    rgb        = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results    = hands.process(rgb)
+    # Header bar
+    cv2.rectangle(frame, (0, 0), (w, 100), (25, 25, 25), -1)
 
-    # Cek tangan
-    tangan_ok = False
-    if results.multi_hand_landmarks:
-        jml = len(results.multi_hand_landmarks)
-        for hl in results.multi_hand_landmarks:
-            mp_drawing.draw_landmarks(frame, hl, mp_hands.HAND_CONNECTIONS)
-        tangan_ok = (jml >= 1) if IS_1_TANGAN else (jml >= 2)
+    # Progress bar
+    progress_pct = total_done / TARGET_VIDEO
+    bar_x2 = 20 + int(progress_pct * (w - 40))
+    cv2.rectangle(frame, (20, 10), (w - 20, 26), (60, 60, 60), -1)
+    cv2.rectangle(frame, (20, 10), (bar_x2, 26),
+                  (0, 210, 120) if total_done < TARGET_VIDEO else (0, 255, 200), -1)
 
-    # UI
-    total_done = video_lama + video_done
-    cv2.rectangle(frame, (0, 0), (w, 100), (30, 30, 30), -1)
-    progress = int((total_done / TARGET_VIDEO) * (w - 40))
-    cv2.rectangle(frame, (20, 10), (w - 20, 26), (70, 70, 70), -1)
-    cv2.rectangle(frame, (20, 10), (20 + progress, 26), (0, 210, 120), -1)
+    # Teks kata & progress
     cv2.putText(frame, f"{TARGET_KATA.upper()}  {total_done}/{TARGET_VIDEO} video",
-                (20, 56), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2)
-    cv2.putText(frame, f"Butuh {BUTUH_TANGAN} tangan",
-                (20, 82), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (170, 170, 170), 1)
+                (20, 54), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
 
-    if tangan_ok:
-        cv2.putText(frame, "Tangan OK  -  ENTER = mulai rekam",
-                    (20, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 230, 100), 2)
+    # Status tangan
+    th_c = (0, 220, 100) if tangan_info else (100, 100, 255)
+    cv2.putText(frame, tangan_info if tangan_info else "Arahkan tangan ke kamera...",
+                (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.55, th_c, 1)
+
+    if recording:
+        # Rekam progress bar
+        prog = int((frame_ke / FRAME_PER_VIDEO) * (w - 40))
+        cv2.rectangle(frame, (20, 108), (w - 20, 122), (40, 40, 40), -1)
+        cv2.rectangle(frame, (20, 108), (20 + prog, 122), (0, 80, 255), -1)
+        cv2.putText(frame, f"● MEREKAM  {frame_ke}/{FRAME_PER_VIDEO} frame",
+                    (20, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 80, 255), 2)
+
+        if occlusion:
+            cv2.rectangle(frame, (20, 155), (380, 180), (0, 0, 180), -1)
+            cv2.putText(frame, "TUMPUKAN TERDETEKSI ✓",
+                        (25, 173), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
+
+        # Flow indicator
+        bar_flow = int(min(flow_mag * 500, w - 40))
+        cv2.rectangle(frame, (20, 185), (w - 20, 198), (40, 40, 40), -1)
+        cv2.rectangle(frame, (20, 185), (20 + bar_flow, 198), (255, 130, 0), -1)
+        cv2.putText(frame, f"Gerakan: {'Bergerak' if flow_mag > 0.02 else 'Diam'}",
+                    (20, 215), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
     else:
-        cv2.putText(frame, f"Arahkan {BUTUH_TANGAN} tangan ke kamera...",
-                    (20, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 130, 255), 2)
+        if total_done < TARGET_VIDEO:
+            cv2.putText(frame, "ENTER = mulai rekam",
+                        (20, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.65,
+                        (0, 220, 100) if tangan_info else (100, 100, 100), 2)
+        else:
+            cv2.putText(frame, "TARGET TERCAPAI!  Q = simpan & keluar",
+                        (20, 145), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 200), 2)
 
-    if total_done >= TARGET_VIDEO:
-        cv2.putText(frame, "TARGET TERCAPAI!  Tekan Q",
-                    (20, 165), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 200), 2)
+    return frame
 
-    cv2.imshow(f'Rekam Kata - {TARGET_KATA.upper()}', frame)
 
-    key = cv2.waitKey(1) & 0xFF
+def main():
+    extractor  = FeatureExtractor(min_detection_confidence=0.5,
+                                  min_tracking_confidence=0.5)
+    cap        = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-    if key == 13 and tangan_ok and total_done < TARGET_VIDEO:
-        # ── MULAI REKAM 1 VIDEO ──
-        buffer        = []
-        frame_ke      = 0
-        rekam_aktif   = True
+    data_baru  = []
+    video_done = 0
 
-        while rekam_aktif and cap.isOpened():
-            ret2, frame2 = cap.read()
-            if not ret2:
-                break
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-            frame2     = cv2.flip(frame2, 1)
-            rgb2       = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB)
-            results2   = hands.process(rgb2)
+        frame    = cv2.flip(frame, 1)
+        features, debug_info = extractor.extract(frame)
+        frame    = extractor.draw_landmarks(frame, debug_info)
 
-            # Countdown visual
-            sisa = FRAME_PER_VIDEO - frame_ke
-            cv2.rectangle(frame2, (0, 0), (frame2.shape[1], 70), (20, 20, 20), -1)
-            cv2.putText(frame2, f"MEREKAM... frame {frame_ke+1}/{FRAME_PER_VIDEO}",
-                        (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 80, 255), 2)
-            cv2.putText(frame2, "Lakukan gerakan sekarang!",
-                        (20, 58), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 200, 0), 2)
+        total_done  = video_lama + video_done
+        rh          = debug_info['rh_det']
+        lh          = debug_info['lh_det']
+        occ         = debug_info['occlusion']
 
-            if results2.multi_hand_landmarks:
-                for hl in results2.multi_hand_landmarks:
-                    mp_drawing.draw_landmarks(frame2, hl, mp_hands.HAND_CONNECTIONS)
+        if rh and lh:
+            tangan_info = "Kedua tangan terdeteksi ✓"
+        elif rh or lh:
+            tangan_info = f"{'Kanan' if rh else 'Kiri'} terdeteksi" + \
+                          (" | TUMPUKAN?" if occ else "")
+        elif occ:
+            tangan_info = "Tangan bertumpuk terdeteksi ✓ (via pose)"
+        else:
+            tangan_info = None
 
-                jml2 = len(results2.multi_hand_landmarks)
-                coords = []
+        any_detected = rh or lh or occ or debug_info['results'].pose_landmarks
 
-                if IS_1_TANGAN and jml2 >= 1:
-                    for lm in results2.multi_hand_landmarks[0].landmark:
-                        coords.extend([lm.x, lm.y, lm.z])
+        frame = draw_ui(frame, total_done, tangan_info)
+        cv2.imshow(f'Rekam: {TARGET_KATA.upper()}', frame)
 
-                elif not IS_1_TANGAN and jml2 >= 2:
-                    for hl in results2.multi_hand_landmarks[:2]:
-                        for lm in hl.landmark:
-                            coords.extend([lm.x, lm.y, lm.z])
+        key = cv2.waitKey(1) & 0xFF
 
-                if len(coords) == N_FITUR:
-                    buffer.append(coords)
+        if key == 13 and any_detected and total_done < TARGET_VIDEO:
+            # ── MULAI REKAM 1 VIDEO ──────────────────────────────────
+            extractor.reset_buffers()
+            buffer   = []
+            frame_ke = 0
+
+            while frame_ke < FRAME_PER_VIDEO and cap.isOpened():
+                ret2, frame2 = cap.read()
+                if not ret2:
+                    break
+
+                frame2             = cv2.flip(frame2, 1)
+                features2, dinfo2  = extractor.extract(frame2)
+                frame2             = extractor.draw_landmarks(frame2, dinfo2)
+
+                # Simpan fitur — TIDAK dibuang walau tangan bertumpuk
+                # Pose landmarks memastikan ada data bahkan saat oklusi
+                pose_ok = dinfo2['results'].pose_landmarks is not None
+                if pose_ok or dinfo2['rh_det'] or dinfo2['lh_det']:
+                    buffer.append(features2)
                     frame_ke += 1
 
-            cv2.imshow(f'Rekam Kata - {TARGET_KATA.upper()}', frame2)
-            cv2.waitKey(1)
+                frame2 = draw_ui(frame2, total_done, None,
+                                 recording=True, frame_ke=frame_ke,
+                                 occlusion=dinfo2['occlusion'],
+                                 flow_mag=dinfo2['flow_mag'])
+                cv2.imshow(f'Rekam: {TARGET_KATA.upper()}', frame2)
+                cv2.waitKey(1)
 
-            if frame_ke >= FRAME_PER_VIDEO:
-                rekam_aktif = False
+            # ── Evaluasi hasil rekam ──────────────────────────────────
+            if len(buffer) >= FRAME_PER_VIDEO * 0.8:  # toleransi 80%
+                # Pad/trim ke tepat 30 frame
+                seq = pad_or_trim(buffer, FRAME_PER_VIDEO)
+                # Normalisasi
+                seq = normalize_sequence(seq)
 
-        # Simpan buffer jika lengkap 30 frame
-        if len(buffer) == FRAME_PER_VIDEO:
-            for coords in buffer:
-                data_baru.append(coords + [TARGET_KATA])
-            video_done += 1
-            print(f"  Video {video_lama + video_done}/{TARGET_VIDEO} tersimpan!")
-        else:
-            print(f"  Video gagal ({len(buffer)} frame) — tangan hilang saat rekam, coba lagi")
+                for i, feat in enumerate(seq):
+                    data_baru.append(list(feat) + [TARGET_KATA])
 
-    elif key == ord('q'):
-        break
+                video_done += 1
+                print(f"  ✓ Video {video_lama + video_done}/{TARGET_VIDEO} tersimpan "
+                      f"({len(buffer)} frame valid)")
+            else:
+                print(f"  ✗ Gagal — hanya {len(buffer)}/{FRAME_PER_VIDEO} frame valid")
+                print(f"    Pastikan tangan/tubuh terlihat kamera saat rekam")
 
-cap.release()
-cv2.destroyAllWindows()
+        elif key == ord('q'):
+            break
 
-# Simpan CSV
-if data_baru:
-    df_baru   = pd.DataFrame(data_baru, columns=COLS)
-    df_gabung = pd.concat([df_lama, df_baru], ignore_index=True)
-    df_gabung.to_csv(CSV_PATH, index=False)
-    total_video = len(df_gabung[df_gabung['label'] == TARGET_KATA]) // FRAME_PER_VIDEO
-    print(f"\nBerhasil menyimpan {video_done} video baru")
-    print(f"Total video '{TARGET_KATA}' : {total_video}/{TARGET_VIDEO}")
-    print(f"Disimpan di : {CSV_PATH}")
-else:
-    print("\nTidak ada data baru yang disimpan.")
+    extractor.release()
+    cap.release()
+    cv2.destroyAllWindows()
+
+    # ── Simpan CSV ────────────────────────────────────────────────────
+    if data_baru:
+        df_baru   = pd.DataFrame(data_baru, columns=ALL_COLS)
+        df_gabung = pd.concat([df_lama, df_baru], ignore_index=True)
+        df_gabung.to_csv(CSV_PATH, index=False)
+        total = len(df_gabung[df_gabung['label'] == TARGET_KATA]) // FRAME_PER_VIDEO
+        print(f"\n✓ Berhasil menyimpan {video_done} video baru")
+        print(f"  Total '{TARGET_KATA}': {total}/{TARGET_VIDEO} video")
+        print(f"  Disimpan: {CSV_PATH}")
+    else:
+        print("\nTidak ada data baru yang disimpan.")
+
+
+if __name__ == '__main__':
+    main()
