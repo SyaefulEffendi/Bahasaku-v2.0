@@ -22,7 +22,7 @@ server/__pycache__/
 *.pyo
 
 # Model AI (ukuran besar, simpan terpisah)
-server/app/models_ml/*.h5
+server/app/models_ml/*.keras
 server/app/models_ml/*.pkl
 
 # Dataset (ukuran besar, jangan di-commit)
