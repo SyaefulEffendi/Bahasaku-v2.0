@@ -15,6 +15,13 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import os
+
+# Paksa TensorFlow & MediaPipe gunakan NVIDIA GPU (RTX 3050)
+# Harus dilakukan SEBELUM import mediapipe diproses
+os.environ['CUDA_VISIBLE_DEVICES']        = '0'        # pakai GPU index 0
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH']   = 'true'     # alokasi VRAM bertahap
+os.environ['TF_CPP_MIN_LOG_LEVEL']        = '2'        # sembunyikan log TF
 
 # Setup MediaPipe
 mp_holistic       = mp.solutions.holistic
@@ -41,7 +48,9 @@ class FeatureExtractor:
         self.holistic = mp_holistic.Holistic(
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
-            model_complexity=1,
+            model_complexity=1,          # tetap 1 untuk kualitas bagus
+            enable_segmentation=False,   # matikan fitur yang tidak dipakai
+            smooth_landmarks=True,       # landmark lebih stabil
         )
         # Simpan frame sebelumnya untuk optical flow
         self._frame_sebelumnya = None
@@ -235,7 +244,12 @@ class FeatureExtractor:
 
     def gambar_landmark(self, frame, info):
         """Gambar titik-titik tangan dan pose di atas frame."""
-        hasil    = info['hasil_mediapipe']
+        hasil = info['hasil_mediapipe']
+        h, w  = frame.shape[:2]
+
+        # Custom ukuran titik — lebih kecil dari default MediaPipe
+        titik_kecil = mp_drawing.DrawingSpec(circle_radius=2, thickness=1)
+        garis_tipis = mp_drawing.DrawingSpec(thickness=1)
 
         if hasil.pose_landmarks:
             mp_drawing.draw_landmarks(
@@ -246,18 +260,14 @@ class FeatureExtractor:
         lm_kanan = hasil.right_hand_landmarks
         lm_kiri  = hasil.left_hand_landmarks
         if lm_kanan and lm_kiri:
-            # Sama dengan logika di _ambil_fitur_tangan:
-            # setelah flip, tangan kanan ada di KIRI layar (x lebih kecil)
             if lm_kanan.landmark[0].x > lm_kiri.landmark[0].x:
                 lm_kanan, lm_kiri = lm_kiri, lm_kanan
 
         if lm_kanan:
             mp_drawing.draw_landmarks(
                 frame, lm_kanan, mp_holistic.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style()
+                titik_kecil, garis_tipis
             )
-            h, w = frame.shape[:2]
             wx = int(lm_kanan.landmark[0].x * w)
             wy = int(lm_kanan.landmark[0].y * h)
             cv2.putText(frame, "R", (wx - 10, wy - 15),
@@ -266,10 +276,8 @@ class FeatureExtractor:
         if lm_kiri:
             mp_drawing.draw_landmarks(
                 frame, lm_kiri, mp_holistic.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style()
+                titik_kecil, garis_tipis
             )
-            h, w = frame.shape[:2]
             wx = int(lm_kiri.landmark[0].x * w)
             wy = int(lm_kiri.landmark[0].y * h)
             cv2.putText(frame, "L", (wx - 10, wy - 15),

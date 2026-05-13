@@ -21,7 +21,7 @@ from feature_extractor import FeatureExtractor, N_FITUR, sesuaikan_panjang, norm
 
 # ════════════════════════════════════════════════════════════════════
 #   UBAH INI setiap ganti kata
-TARGET_KATA  = 'halo'        # kata yang akan direkam
+TARGET_KATA  = 'terimakasih'        # kata yang akan direkam
 TARGET_VIDEO = 50            # jumlah video per kata (jangan dikurangi)
 # ════════════════════════════════════════════════════════════════════
 
@@ -101,8 +101,12 @@ def gambar_ui(frame, total, info_tangan, sedang_rekam=False,
 def main():
     extractor  = FeatureExtractor()
     cap        = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    # 1280x720 berat di RAM — turunkan ke 640x480
+    # Kualitas DATA tidak berubah karena yang disimpan adalah koordinat landmark,
+    # bukan gambar. MediaPipe menghasilkan landmark yang sama kualitasnya.
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 30)
 
     data_baru  = []
     video_done = 0

@@ -107,11 +107,11 @@ cw_dict = dict(enumerate(cw))
 # ── 4. Bangun model ──────────────────────────────────────────────────────────
 def buat_model(panjang_seq, n_fitur, n_kelas):
     inp = Input(shape=(panjang_seq, n_fitur))
-    x   = Masking(mask_value=0.0)(inp)
+    # Catatan: tidak pakai Masking layer karena tidak kompatibel Keras 3
 
     # Bi-LSTM layer 1
     x = Bidirectional(LSTM(128, return_sequences=True,
-                           dropout=0.1, recurrent_dropout=0.1))(x)
+                           dropout=0.1, recurrent_dropout=0.1))(inp)
     x = LayerNormalization()(x)
     x = Dropout(0.3)(x)
 
@@ -142,7 +142,7 @@ model.compile(
 model.summary()
 
 # ── 5. Training ──────────────────────────────────────────────────────────────
-model_terbaik = os.path.join(MODEL_DIR, 'model_kata_terbaik.h5')
+model_terbaik = os.path.join(MODEL_DIR, 'model_kata.keras')
 callbacks = [
     EarlyStopping(monitor='val_accuracy', patience=30,
                   restore_best_weights=True, verbose=1),
@@ -187,7 +187,7 @@ plt.savefig(os.path.join(MODEL_DIR, 'confusion_matrix_kata.png'))
 print(f"Confusion matrix → {MODEL_DIR}\\confusion_matrix_kata.png")
 
 # ── 7. Simpan model ──────────────────────────────────────────────────────────
-model_path = os.path.join(MODEL_DIR, 'model_kata.h5')
+model_path = os.path.join(MODEL_DIR, 'model_kata.keras')
 model.save(model_path)
 print(f"\nModel disimpan  : {model_path}")
 print(f"Encoder disimpan: {enc_path}")
