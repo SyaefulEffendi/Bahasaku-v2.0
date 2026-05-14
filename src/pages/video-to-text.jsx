@@ -7,20 +7,22 @@ import Webcam from 'react-webcam';
 import axios from 'axios';
 import './css/video-to-text.css';
 import API_BASE_URL from '../config/apiConfig';
+import { Holistic, HAND_CONNECTIONS, POSE_CONNECTIONS } from '@mediapipe/holistic';
+import { drawConnectors, drawLandmarks as mpDrawLandmarks } from '@mediapipe/drawing_utils';
 
-// ID unik per tab browser agar buffer kata tidak tercampur antar pengguna
+// ID unik per tab browser
 const SESSION_ID = (() => {
     try { return crypto.randomUUID(); }
     catch (_) { return Math.random().toString(36).slice(2); }
 })();
 
-const INTERVAL_HURUF  = 500;
-const INTERVAL_KATA   = 100;
+const INTERVAL_HURUF  = 300;   // prediksi server tiap 300ms
+const INTERVAL_KATA   = 33;    // ~30fps — sesuai uji_kamera.py
 const FRAME_PER_VIDEO = 30;
 
 function VideoToText() {
     const [isCameraOpen, setIsCameraOpen] = useState(false);
-    const [isCamReady, setIsCamReady]     = useState(false); // true setelah stream aktif
+    const [isCamReady, setIsCamReady]     = useState(false);
     const [mode, setMode]                 = useState('huruf');
     const [translation, setTranslation]   = useState('');
     const [confidence, setConfidence]     = useState(0);
@@ -31,12 +33,15 @@ function VideoToText() {
     const [camError, setCamError]         = useState('');
 
     const webcamRef       = useRef(null);
+    const canvasRef       = useRef(null);
     const intervalRef     = useRef(null);
-    // Ref untuk hindari stale closure di dalam setInterval
     const modeRef         = useRef(mode);
     const isCapturingRef  = useRef(isCapturing);
     const isProcessingRef = useRef(false);
     const isCamReadyRef   = useRef(false);
+    const pendingKataRef  = useRef(0);
+    const holisticRef     = useRef(null);
+    const animFrameRef    = useRef(null);
 
     useEffect(() => { modeRef.current = mode; }, [mode]);
     useEffect(() => {
@@ -55,7 +60,85 @@ function VideoToText() {
         return new Blob([ab], { type: mimeString });
     };
 
-    // ── Prediksi huruf ────────────────────────────────────────────────────────
+    // ── Client-side MediaPipe: gambar landmark real-time di canvas ──────────
+    const onHolisticResults = useCallback((results) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = results.image.width;
+        const h = results.image.height;
+        canvas.width  = w;
+        canvas.height = h;
+        ctx.clearRect(0, 0, w, h);
+
+        // Pose (termasuk titik wajah/mulut — sama seperti uji_kamera.py)
+        if (results.poseLandmarks) {
+            drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
+                { color: 'rgba(0, 255, 255, 0.3)', lineWidth: 1 });
+            mpDrawLandmarks(ctx, results.poseLandmarks,
+                { color: 'rgba(0, 255, 255, 0.5)', lineWidth: 1, radius: 2 });
+        }
+
+        // Tangan kanan (hijau)
+        if (results.rightHandLandmarks) {
+            drawConnectors(ctx, results.rightHandLandmarks, HAND_CONNECTIONS,
+                { color: '#00DC64', lineWidth: 2 });
+            mpDrawLandmarks(ctx, results.rightHandLandmarks,
+                { color: '#FF6600', lineWidth: 1, radius: 3 });
+        }
+
+        // Tangan kiri (biru)
+        if (results.leftHandLandmarks) {
+            drawConnectors(ctx, results.leftHandLandmarks, HAND_CONNECTIONS,
+                { color: '#0096FF', lineWidth: 2 });
+            mpDrawLandmarks(ctx, results.leftHandLandmarks,
+                { color: '#FF6600', lineWidth: 1, radius: 3 });
+        }
+    }, []);
+
+    // ── Initialize MediaPipe Holistic saat kamera siap ─────────────────────
+    useEffect(() => {
+        if (!isCameraOpen || !isCamReady) return;
+
+        const holistic = new Holistic({
+            locateFile: (file) =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`,
+        });
+        holistic.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5,
+        });
+        holistic.onResults(onHolisticResults);
+        holisticRef.current = holistic;
+
+        // Loop: kirim frame webcam ke MediaPipe client-side
+        let running = true;
+        const processLoop = async () => {
+            if (!running) return;
+            const video = webcamRef.current?.video;
+            if (video && video.readyState >= 2 && holisticRef.current) {
+                try {
+                    await holisticRef.current.send({ image: video });
+                } catch (e) {
+                    // Ignore errors saat cleanup
+                }
+            }
+            if (running) {
+                animFrameRef.current = requestAnimationFrame(processLoop);
+            }
+        };
+        processLoop();
+
+        return () => {
+            running = false;
+            cancelAnimationFrame(animFrameRef.current);
+            holistic.close();
+            holisticRef.current = null;
+        };
+    }, [isCameraOpen, isCamReady, onHolisticResults]);
+    // ── Prediksi huruf — server-side only (landmark sudah di client) ───────
     const captureHuruf = useCallback(async () => {
         if (!webcamRef.current)        return;
         if (!isCamReadyRef.current)    return;
@@ -72,8 +155,14 @@ function VideoToText() {
             const { data } = await axios.post(
                 `${API_BASE_URL}/ai/predict/huruf`,
                 formData,
-                { headers: { 'Content-Type': 'multipart/form-data' } }
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        'X-Session-ID': SESSION_ID,
+                    },
+                }
             );
+
             if (data.text) {
                 setTranslation(data.text);
                 setConfidence(Math.round((data.confidence || 0) * 100));
@@ -87,14 +176,16 @@ function VideoToText() {
         }
     }, []);
 
-    // ── Prediksi kata ─────────────────────────────────────────────────────────
+    // ── Prediksi kata — server-side only (landmark sudah di client) ────────
     const captureKata = useCallback(async () => {
         if (!webcamRef.current)     return;
         if (!isCamReadyRef.current) return;
+        if (pendingKataRef.current >= 3) return;
 
         const imageSrc = webcamRef.current.getScreenshot();
         if (!imageSrc) return;
 
+        pendingKataRef.current++;
         try {
             const formData = new FormData();
             formData.append('image', dataURItoBlob(imageSrc), 'capture.jpg');
@@ -126,6 +217,8 @@ function VideoToText() {
             }
         } catch (err) {
             console.error('[captureKata]', err);
+        } finally {
+            pendingKataRef.current--;
         }
     }, []);
 
@@ -159,12 +252,13 @@ function VideoToText() {
             isCapturingRef.current = true;
             setIsCapturing(true);
         }
-        setIsCameraOpen(true); // render <Webcam>
+        setIsCameraOpen(true);
     };
 
     // ── Matikan kamera ────────────────────────────────────────────────────────
     const stopCamera = () => {
         clearInterval(intervalRef.current);
+        cancelAnimationFrame(animFrameRef.current);
         setIsCameraOpen(false);
         setIsCamReady(false);
         isCamReadyRef.current = false;
@@ -176,35 +270,51 @@ function VideoToText() {
         isProcessingRef.current = false;
         isCapturingRef.current  = false;
         setIsCapturing(false);
-        if (modeRef.current === 'kata') {
-            axios.post(`${API_BASE_URL}/ai/predict/kata/reset`, null, {
-                headers: { 'X-Session-ID': SESSION_ID },
-            }).catch(() => {});
-        }
+        // Reset session di server
+        axios.post(`${API_BASE_URL}/ai/predict/reset`, null, {
+            headers: { 'X-Session-ID': SESSION_ID },
+        }).catch(() => {});
     };
 
     const toggleCamera = () => isCameraOpen ? stopCamera() : startCamera();
 
-    // ── Ganti mode (hanya saat kamera mati) ──────────────────────────────────
+    // ── Ganti mode — bisa saat kamera aktif (sama seperti uji_kamera.py) ──────
     const switchMode = (newMode) => {
-        if (isCameraOpen) return;
-        modeRef.current = newMode;
-        setMode(newMode);
+        if (newMode === mode) return;
+
+        // Reset state
         setTranslation('');
         setDbResult(null);
         setConfidence(0);
         setBufferCount(0);
+
+        // Reset session di server (buffer + extractor)
+        axios.post(`${API_BASE_URL}/ai/predict/reset`, null, {
+            headers: { 'X-Session-ID': SESSION_ID },
+        }).catch(() => {});
+
+        // Jika masuk ke mode kata, mulai capturing
+        if (newMode === 'kata') {
+            isCapturingRef.current = true;
+            setIsCapturing(true);
+        } else {
+            isCapturingRef.current = false;
+            setIsCapturing(false);
+        }
+
+        modeRef.current = newMode;
+        setMode(newMode);
     };
 
-    // ── Reset buffer kata ─────────────────────────────────────────────────────
-    const resetKata = () => {
+    // ── Reset — sama dengan tombol R di uji_kamera.py ────────────────────────
+    const resetAll = () => {
         setTranslation('');
         setDbResult(null);
         setConfidence(0);
         setBufferCount(0);
         isCapturingRef.current = true;
         setIsCapturing(true);
-        axios.post(`${API_BASE_URL}/ai/predict/kata/reset`, null, {
+        axios.post(`${API_BASE_URL}/ai/predict/reset`, null, {
             headers: { 'X-Session-ID': SESSION_ID },
         }).catch(() => {});
     };
@@ -226,14 +336,12 @@ function VideoToText() {
                                     <Button
                                         variant={mode === 'huruf' ? 'light' : 'outline-light'}
                                         onClick={() => switchMode('huruf')}
-                                        disabled={isCameraOpen}
                                     >
                                         <FaFont className="me-1" /> Huruf
                                     </Button>
                                     <Button
                                         variant={mode === 'kata' ? 'light' : 'outline-light'}
                                         onClick={() => switchMode('kata')}
-                                        disabled={isCameraOpen}
                                     >
                                         <FaHandPaper className="me-1" /> Kata
                                     </Button>
@@ -250,11 +358,6 @@ function VideoToText() {
                                         className="video-wrapper border rounded bg-light d-flex align-items-center justify-content-center position-relative overflow-hidden"
                                         style={{ minHeight: '360px' }}
                                     >
-                                        {/* Tampilkan Webcam hanya saat kamera dibuka.
-                                            Berbeda dari versi sebelumnya (display:none),
-                                            di sini Webcam benar-benar di-mount baru setelah
-                                            toggleCamera diklik, sehingga browser langsung
-                                            memulai stream dan meminta izin. */}
                                         {isCameraOpen ? (
                                             <>
                                                 <Webcam
@@ -266,7 +369,6 @@ function VideoToText() {
                                                     width="100%"
                                                     className="rounded"
                                                     onUserMedia={() => {
-                                                        // Stream aktif → boleh mulai prediksi
                                                         isCamReadyRef.current = true;
                                                         setIsCamReady(true);
                                                     }}
@@ -282,6 +384,17 @@ function VideoToText() {
                                                     }}
                                                 />
 
+                                                {/* Canvas overlay untuk landmark (client-side MediaPipe) */}
+                                                <canvas
+                                                    ref={canvasRef}
+                                                    className="position-absolute top-0 start-0 w-100 h-100"
+                                                    style={{
+                                                        pointerEvents: 'none',
+                                                        transform: 'scaleX(-1)',
+                                                        zIndex: 1,
+                                                    }}
+                                                />
+
                                                 {/* Spinner loading sampai stream siap */}
                                                 {!isCamReady && (
                                                     <div className="position-absolute d-flex flex-column align-items-center justify-content-center w-100 h-100 bg-light bg-opacity-75">
@@ -290,19 +403,28 @@ function VideoToText() {
                                                     </div>
                                                 )}
 
-                                                {/* Badge status */}
-                                                {isCamReady && mode === 'huruf' && isProcessing && (
-                                                    <Badge bg="warning" text="dark" className="position-absolute top-0 end-0 m-2">
-                                                        Mendeteksi...
-                                                    </Badge>
-                                                )}
-                                                {isCamReady && mode === 'kata' && (
-                                                    <Badge
-                                                        bg={isCapturing ? 'danger' : 'secondary'}
-                                                        className="position-absolute top-0 end-0 m-2"
-                                                    >
-                                                        {isCapturing ? '● Merekam...' : '■ Menunggu...'}
-                                                    </Badge>
+                                                {/* Header mode badge */}
+                                                {isCamReady && (
+                                                    <div className="position-absolute top-0 start-0 w-100 d-flex justify-content-between align-items-center px-2 py-1"
+                                                         style={{ backgroundColor: 'rgba(25, 25, 25, 0.75)', zIndex: 2 }}>
+                                                        <Badge
+                                                            bg={mode === 'huruf' ? 'warning' : 'success'}
+                                                            text={mode === 'huruf' ? 'dark' : 'white'}
+                                                            className="px-2 py-1"
+                                                        >
+                                                            MODE: {mode.toUpperCase()}
+                                                        </Badge>
+                                                        <div className="d-flex gap-1">
+                                                            {mode === 'huruf' && isProcessing && (
+                                                                <Badge bg="info">Mendeteksi...</Badge>
+                                                            )}
+                                                            {mode === 'kata' && (
+                                                                <Badge bg={isCapturing ? 'danger' : 'secondary'}>
+                                                                    {isCapturing ? '● Merekam...' : '■ Menunggu...'}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </>
                                         ) : (
@@ -331,6 +453,7 @@ function VideoToText() {
                                         )}
                                     </div>
 
+
                                     {/* Progress bar buffer kata */}
                                     {isCameraOpen && isCamReady && mode === 'kata' && (
                                         <div className="mt-2">
@@ -348,19 +471,20 @@ function VideoToText() {
                                     )}
 
                                     {/* Tombol kontrol */}
-                                    <div className="d-grid gap-2 mt-3">
+                                    <div className="d-flex gap-2 mt-3">
                                         <Button
                                             variant={isCameraOpen ? 'danger' : 'primary'}
                                             onClick={toggleCamera}
                                             size="lg"
+                                            className="flex-grow-1"
                                         >
                                             {isCameraOpen
                                                 ? <><FaStop className="me-2" />Stop Kamera</>
                                                 : <><FaVideo className="me-2" />Mulai Kamera</>}
                                         </Button>
-                                        {isCameraOpen && isCamReady && mode === 'kata' && (
-                                            <Button variant="outline-secondary" size="sm" onClick={resetKata}>
-                                                <FaRedo className="me-1" /> Reset Buffer
+                                        {isCameraOpen && isCamReady && (
+                                            <Button variant="outline-secondary" onClick={resetAll} title="Reset (R)">
+                                                <FaRedo className="me-1" /> Reset
                                             </Button>
                                         )}
                                     </div>
@@ -377,10 +501,18 @@ function VideoToText() {
                                                 border: '2px dashed #0d6efd',
                                                 backgroundColor: '#f0f8ff',
                                                 minHeight: '180px',
+                                                overflow: 'hidden',
                                             }}
                                         >
-                                            <div>
-                                                <h1 className="display-1 fw-bold mb-0 text-dark">
+                                            <div style={{ width: '100%', overflow: 'hidden' }}>
+                                                <h1
+                                                    className="fw-bold mb-0 text-dark"
+                                                    style={{
+                                                        fontSize: 'clamp(1.5rem, 5vw, 4rem)',
+                                                        wordBreak: 'break-word',
+                                                        overflowWrap: 'break-word',
+                                                    }}
+                                                >
                                                     {translation || '-'}
                                                 </h1>
                                                 <p className="text-muted mt-2 mb-0 small">

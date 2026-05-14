@@ -1,25 +1,13 @@
 """
 ai_routes.py
-Mendukung DUA mode prediksi:
-  1. POST /ai/predict/huruf  → model MediaPipe (1 frame, model_1tangan / model_2tangan)
-  2. POST /ai/predict/kata   → model LSTM      (buffer 30 frame, model_kata)
+Mendukung DUA mode prediksi (sesuai uji_kamera.py):
+  1. POST /ai/predict/huruf  → model huruf Dense (1 frame, 156 fitur)
+  2. POST /ai/predict/kata   → model kata LSTM   (buffer 30 frame, 156 fitur)
   3. POST /ai/predict        → backward-compatible, diteruskan ke /huruf
+  4. POST /ai/predict/reset  → reset session (buffer + extractor)
 
-Struktur folder yang diharapkan (sesuai proyek Anda):
-  Server/
-  ├── app/
-  │   ├── models_ml/
-  │   │   ├── model_1tangan.h5
-  │   │   ├── model_2tangan.h5
-  │   │   ├── model_kata.keras  (atau model_kata.h5)
-  │   │   ├── label_encoder_1tangan.pkl
-  │   │   ├── label_encoder_2tangan.pkl
-  │   │   └── label_encoder_kata.pkl
-  │   └── routes/
-  │       └── ai_routes.py   ← file ini
-  └── scripts/
-      └── kata/
-          └── feature_extractor.py   ← diimport di sini
+Semua mode menggunakan FeatureExtractor yang persisten per-session,
+sama seperti uji_kamera.py yang hanya membuat 1 extractor.
 """
 
 import os
@@ -40,11 +28,8 @@ import tensorflow as tf
 MODEL_DIR = os.path.join(os.getcwd(), 'app', 'models_ml')
 
 # ── Import feature_extractor dari scripts/kata/ ───────────────────────────────
-# os.getcwd() saat Flask jalan = folder Server/ (tempat run flask / python app.py)
-# Jadi path-nya: Server/scripts/kata/feature_extractor.py
 _FE_DIR = os.path.join(os.getcwd(), 'scripts', 'kata')
 if not os.path.isdir(_FE_DIR):
-    # Fallback jika dijalankan dari dalam folder app/
     _FE_DIR = os.path.join(os.getcwd(), '..', 'scripts', 'kata')
 sys.path.insert(0, os.path.abspath(_FE_DIR))
 
@@ -57,11 +42,11 @@ except ImportError as e:
     print(f"[ai_routes] Pastikan feature_extractor.py ada di: {_FE_DIR}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Konstanta
+# Konstanta — disesuaikan dengan uji_kamera.py
 # ─────────────────────────────────────────────────────────────────────────────
-CONFIDENCE_HURUF  = 0.5
-CONFIDENCE_KATA   = 0.5
-FRAME_PER_VIDEO   = 30
+CONFIDENCE_HURUF = 0.65
+CONFIDENCE_KATA  = 0.65
+FRAME_PER_VIDEO  = 30
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Load semua model (sekali saat startup)
@@ -71,21 +56,17 @@ print("[ai_routes] Memuat model ML...")
 
 # --- Model huruf ---
 try:
-    _model_1t = tf.keras.models.load_model(os.path.join(MODEL_DIR, 'model_1tangan.h5'))
-    _model_2t = tf.keras.models.load_model(os.path.join(MODEL_DIR, 'model_2tangan.h5'))
-    with open(os.path.join(MODEL_DIR, 'label_encoder_1tangan.pkl'), 'rb') as f:
-        _encoder_1t = pickle.load(f)
-    with open(os.path.join(MODEL_DIR, 'label_encoder_2tangan.pkl'), 'rb') as f:
-        _encoder_2t = pickle.load(f)
-    import mediapipe as mp
-    _mp_hands = mp.solutions.hands
-    _hands = _mp_hands.Hands(
-        max_num_hands=2,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.3
-    )
+    _huruf_path = os.path.join(MODEL_DIR, 'model_huruf.keras')
+    if not os.path.exists(_huruf_path):
+        _huruf_path = os.path.join(MODEL_DIR, 'model_huruf.h5')
+
+    _model_huruf = tf.keras.models.load_model(_huruf_path)
+    with open(os.path.join(MODEL_DIR, 'label_encoder_huruf.pkl'), 'rb') as f:
+        _encoder_huruf = pickle.load(f)
+
     MODEL_HURUF_READY = True
-    print("[ai_routes] ✓ Model huruf (1tangan & 2tangan) berhasil dimuat.")
+    print(f"[ai_routes] ✓ Model huruf berhasil dimuat dari {os.path.basename(_huruf_path)}")
+    print(f"[ai_routes]   Huruf: {list(_encoder_huruf.classes_)}")
 except Exception as e:
     MODEL_HURUF_READY = False
     print(f"[ai_routes] ✗ Gagal memuat model huruf: {e}")
@@ -110,7 +91,8 @@ except Exception as e:
 print("=" * 55)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Session buffer untuk mode kata (satu buffer per tab browser)
+# Session buffer — satu session menyimpan extractor + buffer kata
+# Sama seperti uji_kamera.py yang hanya punya 1 extractor global
 # ─────────────────────────────────────────────────────────────────────────────
 _sessions: dict = {}
 _sessions_lock  = threading.Lock()
@@ -147,6 +129,42 @@ def _read_frame() -> np.ndarray | None:
     return frame
 
 
+def _extract_landmarks(info):
+    """
+    Ambil koordinat landmark dari hasil MediaPipe untuk dikirim ke frontend.
+    Ringan (hanya angka), frontend gambar sendiri di canvas.
+    Koordinat sudah dalam ruang frame yang di-flip (sama dengan tampilan user).
+    """
+    hasil = info['hasil_mediapipe']
+    landmarks = {}
+
+    # Ambil landmark tangan — swap label jika perlu (sama seperti gambar_landmark)
+    lm_kanan = hasil.right_hand_landmarks
+    lm_kiri  = hasil.left_hand_landmarks
+    if lm_kanan and lm_kiri:
+        if lm_kanan.landmark[0].x > lm_kiri.landmark[0].x:
+            lm_kanan, lm_kiri = lm_kiri, lm_kanan
+
+    if lm_kanan:
+        landmarks['right_hand'] = [
+            [float(lm.x), float(lm.y)] for lm in lm_kanan.landmark
+        ]
+    if lm_kiri:
+        landmarks['left_hand'] = [
+            [float(lm.x), float(lm.y)] for lm in lm_kiri.landmark
+        ]
+
+    # Pose — bahu, siku, pergelangan
+    if hasil.pose_landmarks:
+        landmarks['pose'] = [
+            [float(hasil.pose_landmarks.landmark[i].x),
+             float(hasil.pose_landmarks.landmark[i].y)]
+            for i in [11, 12, 13, 14, 15, 16]
+        ]
+
+    return landmarks
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Blueprint
 # ─────────────────────────────────────────────────────────────────────────────
@@ -156,64 +174,95 @@ ai_bp = Blueprint('ai_bp', __name__)
 # ── /predict/huruf ────────────────────────────────────────────────────────────
 @ai_bp.route('/predict/huruf', methods=['POST'])
 def predict_huruf():
+    """
+    Prediksi huruf dari 1 frame — sama persis dengan prediksi_huruf() di uji_kamera.py.
+    Menggunakan extractor persisten per session agar optical flow & decay berfungsi.
+    """
     if not MODEL_HURUF_READY:
         return jsonify({'error': 'Model huruf belum siap'}), 500
+    if not FE_AVAILABLE:
+        return jsonify({'error': 'Feature extractor tidak tersedia'}), 500
 
     frame = _read_frame()
     if frame is None:
         return jsonify({'error': 'Tidak ada gambar yang dikirim'}), 400
 
+    session_id = request.headers.get('X-Session-ID', 'default')
+    sess       = _get_session(session_id)
+    extractor: FeatureExtractor = sess['extractor']
+
     try:
-        frame   = cv2.flip(frame, 1)
-        rgb     = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = _hands.process(rgb)
+        frame = cv2.flip(frame, 1)
 
-        if not results.multi_hand_landmarks:
-            print(f"[predict_huruf] ⚠️ Tidak ada tangan terdeteksi di frame")
-            return jsonify({'text': '', 'confidence': 0.0, 'found_in_db': False, 'db_detail': None}), 200
+        # Ekstrak fitur 156 menggunakan FeatureExtractor persisten
+        fitur, info = extractor.extract(frame)
+        landmarks   = _extract_landmarks(info)
 
-        jumlah = len(results.multi_hand_landmarks)
-        print(f"[predict_huruf] ✓ Terdeteksi {jumlah} tangan")
+        ada_kanan = info['ada_kanan']
+        ada_kiri  = info['ada_kiri']
+        tumpuk    = info['tumpuk']
+        ada_pose  = info['hasil_mediapipe'].pose_landmarks is not None
 
-        if jumlah == 1:
-            coords = []
-            for lm in results.multi_hand_landmarks[0].landmark:
-                coords.extend([lm.x, lm.y, lm.z])
-            pred       = _model_1t.predict(np.array([coords]), verbose=0)
-            idx        = int(np.argmax(pred))
-            confidence = float(pred[0][idx])
-            huruf      = _encoder_1t.inverse_transform([idx])[0] if confidence >= CONFIDENCE_HURUF else ''
-            print(f"[predict_huruf] 1 tangan: {huruf} (confidence: {confidence:.4f})")
-        else:
-            coords = []
-            for hl in results.multi_hand_landmarks[:2]:
-                for lm in hl.landmark:
-                    coords.extend([lm.x, lm.y, lm.z])
-            pred       = _model_2t.predict(np.array([coords]), verbose=0)
-            idx        = int(np.argmax(pred))
-            confidence = float(pred[0][idx])
-            huruf      = _encoder_2t.inverse_transform([idx])[0] if confidence >= CONFIDENCE_HURUF else ''
-            print(f"[predict_huruf] 2 tangan: {huruf} (confidence: {confidence:.4f})")
+        detection_status = {
+            'right_hand':   bool(ada_kanan),
+            'left_hand':    bool(ada_kiri),
+            'overlapping':  bool(tumpuk),
+            'pose':         bool(ada_pose),
+        }
 
-        if not huruf:
-            return jsonify({'text': '', 'confidence': round(confidence, 4), 'found_in_db': False, 'db_detail': None}), 200
+        # Sama dengan uji_kamera.py: prediksi_huruf() hanya jalan kalau ada tangan
+        ada_tangan = ada_kanan or ada_kiri or tumpuk
+        if not ada_tangan:
+            return jsonify({
+                'text':             '',
+                'confidence':       0.0,
+                'found_in_db':      False,
+                'db_detail':        None,
+                'detection_status': detection_status,
+                'landmarks':        landmarks,
+            }), 200
+
+        # Prediksi — sama dengan uji_kamera.py
+        pred       = _model_huruf.predict(fitur[np.newaxis, ...], verbose=0)
+        idx        = int(np.argmax(pred))
+        confidence = float(pred[0][idx])
+
+        if confidence < CONFIDENCE_HURUF:
+            return jsonify({
+                'text':             '',
+                'confidence':       round(confidence, 4),
+                'found_in_db':      False,
+                'db_detail':        None,
+                'detection_status': detection_status,
+                'landmarks':        landmarks,
+            }), 200
+
+        huruf = _encoder_huruf.inverse_transform([idx])[0]
 
         db_item = KosaKata.query.filter(KosaKata.text.ilike(huruf)).first()
         return jsonify({
-            'text':        huruf,
-            'confidence':  round(confidence, 4),
-            'found_in_db': bool(db_item),
-            'db_detail':   db_item.to_detail_dict() if db_item else None,
+            'text':             huruf,
+            'confidence':       round(confidence, 4),
+            'found_in_db':      bool(db_item),
+            'db_detail':        db_item.to_detail_dict() if db_item else None,
+            'detection_status': detection_status,
+            'landmarks':        landmarks,
         }), 200
 
     except Exception as e:
         print(f"[predict_huruf] Error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'error_type': type(e).__name__}), 500
 
 
 # ── /predict/kata ─────────────────────────────────────────────────────────────
 @ai_bp.route('/predict/kata', methods=['POST'])
 def predict_kata():
+    """
+    Prediksi kata — sama dengan mode 'kata' di uji_kamera.py.
+    Frame dikumpulkan ke buffer, saat penuh (30 frame) baru diprediksi.
+    """
     if not MODEL_KATA_READY:
         return jsonify({'error': 'Model kata belum siap'}), 500
 
@@ -223,73 +272,79 @@ def predict_kata():
 
     session_id = request.headers.get('X-Session-ID', 'default')
     sess       = _get_session(session_id)
-    buffer: deque              = sess['buffer']
+    buffer: deque               = sess['buffer']
     extractor: FeatureExtractor = sess['extractor']
 
     try:
         frame = cv2.flip(frame, 1)
         fitur, info = extractor.extract(frame)
+        landmarks   = _extract_landmarks(info)
 
-        ada_sesuatu = (
-            info['ada_kanan'] or
-            info['ada_kiri']  or
-            info['tumpuk']    or
-            (info['hasil_mediapipe'].pose_landmarks is not None)
-        )
+        ada_kanan = info['ada_kanan']
+        ada_kiri  = info['ada_kiri']
+        tumpuk    = info['tumpuk']
+        ada_pose  = info['hasil_mediapipe'].pose_landmarks is not None
+
+        detection_status = {
+            'right_hand':   bool(ada_kanan),
+            'left_hand':    bool(ada_kiri),
+            'overlapping':  bool(tumpuk),
+            'pose':         bool(ada_pose),
+        }
+
+        # Sama dengan uji_kamera.py: tambah ke buffer hanya jika ada gerakan
+        ada_sesuatu = ada_kanan or ada_kiri or tumpuk or ada_pose
         if ada_sesuatu:
             buffer.append(fitur)
-            if len(buffer) % 5 == 0:  # Log setiap 5 frame
-                tangan_status = f"kanan: {info['ada_kanan']}, kiri: {info['ada_kiri']}"
-                print(f"[predict_kata] Buffer: {len(buffer)}/{FRAME_PER_VIDEO} ({tangan_status})")
-        else:
-            if len(buffer) > 0:  # Hanya log jika ada yang sebelumnya tertambah
-                print(f"[predict_kata] ⚠️ Gerakan tangan tidak terdeteksi, buffer hold di {len(buffer)}")
 
         if len(buffer) < FRAME_PER_VIDEO:
             return jsonify({
-                'text':         '',
-                'buffer_count': len(buffer),
-                'buffer_max':   FRAME_PER_VIDEO,
-                'ready':        False,
+                'text':             '',
+                'buffer_count':     len(buffer),
+                'buffer_max':       FRAME_PER_VIDEO,
+                'ready':            False,
+                'detection_status': detection_status,
+                'landmarks':        landmarks,
             }), 200
 
-        # Buffer penuh → prediksi
-        seq       = sesuaikan_panjang(list(buffer), FRAME_PER_VIDEO)
+        # Buffer penuh → prediksi (sama dengan uji_kamera.py)
+        seq       = np.array(list(buffer))
         seq       = normalisasi_sekuens(seq)
         seq_input = seq[np.newaxis, ...]
 
         pred       = _model_kata.predict(seq_input, verbose=0)
         idx        = int(np.argmax(pred))
         confidence = float(pred[0][idx])
-        kata       = str(_encoder_kata.inverse_transform([idx])[0]).upper() if confidence >= CONFIDENCE_KATA else ''
 
+        if confidence > CONFIDENCE_KATA:
+            kata = str(_encoder_kata.inverse_transform([idx])[0]).upper()
+        else:
+            kata = '?'
+
+        # Reset buffer & extractor setelah prediksi — sama dengan uji_kamera.py
         buffer.clear()
         extractor.reset()
 
-        if not kata:
-            return jsonify({
-                'text':         '',
-                'confidence':   round(confidence, 4),
-                'buffer_count': 0,
-                'buffer_max':   FRAME_PER_VIDEO,
-                'ready':        True,
-                'found_in_db':  False,
-                'db_detail':    None,
-            }), 200
+        db_item = None
+        if kata and kata != '?':
+            db_item = KosaKata.query.filter(KosaKata.text.ilike(kata)).first()
 
-        db_item = KosaKata.query.filter(KosaKata.text.ilike(kata)).first()
         return jsonify({
-            'text':         kata,
-            'confidence':   round(confidence, 4),
-            'buffer_count': 0,
-            'buffer_max':   FRAME_PER_VIDEO,
-            'ready':        True,
-            'found_in_db':  bool(db_item),
-            'db_detail':    db_item.to_detail_dict() if db_item else None,
+            'text':             kata,
+            'confidence':       round(confidence, 4),
+            'buffer_count':     0,
+            'buffer_max':       FRAME_PER_VIDEO,
+            'ready':            True,
+            'found_in_db':      bool(db_item),
+            'db_detail':        db_item.to_detail_dict() if db_item else None,
+            'detection_status': detection_status,
+            'landmarks':        landmarks,
         }), 200
 
     except Exception as e:
         print(f"[predict_kata] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': 'Internal server error'}), 500
 
 
@@ -305,6 +360,19 @@ def reset_kata():
     return jsonify({'message': 'Buffer direset'}), 200
 
 
+# ── /predict/reset ────────────────────────────────────────────────────────────
+@ai_bp.route('/predict/reset', methods=['POST'])
+def reset_session():
+    """Reset session — dipanggil saat ganti mode atau reset manual."""
+    session_id = request.headers.get('X-Session-ID', 'default')
+    with _sessions_lock:
+        if session_id in _sessions:
+            _sessions[session_id]['buffer'].clear()
+            if _sessions[session_id]['extractor']:
+                _sessions[session_id]['extractor'].reset()
+    return jsonify({'message': 'Session direset'}), 200
+
+
 # ── /predict (backward-compatible) ───────────────────────────────────────────
 @ai_bp.route('/predict', methods=['POST'])
 def predict_sign():
@@ -316,11 +384,11 @@ def predict_sign():
 @ai_bp.route('/debug/hand-detection', methods=['POST'])
 def debug_hand_detection():
     """
-    Endpoint untuk diagnosa: apakah MediaPipe bisa mendeteksi tangan?
+    Endpoint untuk diagnosa: apakah MediaPipe bisa mendeteksi tangan dan fitur?
     Kirim gambar, dapatkan detail deteksi lengkap.
     """
-    if not MODEL_HURUF_READY:
-        return jsonify({'error': 'Model huruf belum siap'}), 500
+    if not MODEL_HURUF_READY or not FE_AVAILABLE:
+        return jsonify({'error': 'Model atau feature extractor belum siap'}), 500
 
     frame = _read_frame()
     if frame is None:
@@ -328,67 +396,54 @@ def debug_hand_detection():
 
     try:
         frame = cv2.flip(frame, 1)
-        rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        # Proses dengan berbagai confidence level
-        results = _hands.process(rgb)
-        
+
+        # Ekstrak fitur menggunakan FeatureExtractor
+        extractor_temp = FeatureExtractor()
+        fitur, info = extractor_temp.extract(frame)
+        extractor_temp.tutup()
+
         h, w = frame.shape[:2]
-        
+
         diagnostics = {
             'frame_shape': [h, w],
-            'hands_detected': False,
-            'num_hands': 0,
-            'hand_details': [],
-            'mediapipe_settings': {
-                'min_detection_confidence': 0.5,
-                'min_tracking_confidence': 0.3,
-                'max_num_hands': 2,
+            'feature_extraction': {
+                'total_features': len(fitur),
+                'features_valid': not np.any(np.isnan(fitur)),
+            },
+            'hand_detection': {
+                'right_hand_detected': info['ada_kanan'],
+                'left_hand_detected': info['ada_kiri'],
+                'hands_overlapping': info['tumpuk'],
+                'pose_detected': info['hasil_mediapipe'].pose_landmarks is not None,
             },
             'recommended_action': ''
         }
-        
-        if not results.multi_hand_landmarks:
+
+        ada_sesuatu = (
+            info['ada_kanan'] or
+            info['ada_kiri']  or
+            info['tumpuk']    or
+            (info['hasil_mediapipe'].pose_landmarks is not None)
+        )
+
+        if not ada_sesuatu:
             diagnostics['recommended_action'] = (
-                "❌ Tangan tidak terdeteksi. Coba:\n"
+                "⚠️ Tidak ada gerakan tangan/pose terdeteksi. Coba:\n"
                 "1. Pastikan tangan terlihat jelas di kamera\n"
                 "2. Tingkatkan pencahayaan\n"
                 "3. Posisikan tangan lebih dekat ke kamera\n"
                 "4. Gunakan background yang lebih gelap/kontras"
             )
         else:
-            diagnostics['hands_detected'] = True
-            diagnostics['num_hands'] = len(results.multi_hand_landmarks)
-            
-            for i, hand_lm in enumerate(results.multi_hand_landmarks):
-                hand_info = {
-                    'index': i,
-                    'num_landmarks': len(hand_lm.landmark),
-                    'wrist_position': {
-                        'x': round(hand_lm.landmark[0].x, 3),
-                        'y': round(hand_lm.landmark[0].y, 3),
-                        'z': round(hand_lm.landmark[0].z, 3),
-                    },
-                    'all_landmarks': [
-                        {
-                            'index': j,
-                            'x': round(lm.x, 3),
-                            'y': round(lm.y, 3),
-                            'z': round(lm.z, 3),
-                        }
-                        for j, lm in enumerate(hand_lm.landmark)
-                    ]
-                }
-                diagnostics['hand_details'].append(hand_info)
-            
             diagnostics['recommended_action'] = (
-                f"✅ Terdeteksi {diagnostics['num_hands']} tangan! "
-                "Sistem siap untuk prediksi."
+                f"✅ Gerakan terdeteksi! "
+                f"Kanan: {info['ada_kanan']}, Kiri: {info['ada_kiri']}, "
+                f"Tumpuk: {info['tumpuk']}. Sistem siap untuk prediksi."
             )
-        
+
         print(f"[debug_hand_detection] {diagnostics['recommended_action']}")
         return jsonify(diagnostics), 200
-        
+
     except Exception as e:
         print(f"[debug_hand_detection] Error: {e}")
         import traceback
