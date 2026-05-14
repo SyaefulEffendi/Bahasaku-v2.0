@@ -24,6 +24,7 @@ server/__pycache__/
 # Model AI (ukuran besar, simpan terpisah)
 server/app/models_ml/*.keras
 server/app/models_ml/*.pkl
+server/app/models_ml/*.png
 
 # Dataset (ukuran besar, jangan di-commit)
 server/dataset/
