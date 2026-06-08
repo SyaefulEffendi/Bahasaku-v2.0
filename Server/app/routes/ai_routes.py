@@ -102,8 +102,8 @@ def _get_session(session_id: str) -> dict:
     with _sessions_lock:
         if session_id not in _sessions:
             _sessions[session_id] = {
-                'buffer':    deque(maxlen=FRAME_PER_VIDEO),
-                'extractor': FeatureExtractor() if FE_AVAILABLE else None,
+                'buffer':      deque(maxlen=FRAME_PER_VIDEO),
+                'extractor':   FeatureExtractor() if FE_AVAILABLE else None,
             }
         # Bersihkan session lama jika terlalu banyak
         if len(_sessions) > 50:
@@ -192,7 +192,9 @@ def predict_huruf():
     extractor: FeatureExtractor = sess['extractor']
 
     try:
-        frame = cv2.flip(frame, 1)
+        # CATATAN: frame TIDAK perlu di-flip karena react-webcam dengan
+        # mirrored={true} sudah mengirim gambar yang sudah di-mirror.
+        # Jika di-flip lagi, orientasi jadi salah (tidak sesuai training data).
 
         # Ekstrak fitur 156 menggunakan FeatureExtractor persisten
         fitur, info = extractor.extract(frame)
@@ -222,7 +224,7 @@ def predict_huruf():
                 'landmarks':        landmarks,
             }), 200
 
-        # Prediksi — sama dengan uji_kamera.py
+        # Prediksi — fitur langsung ke model (sama dengan uji_kamera.py)
         pred       = _model_huruf.predict(fitur[np.newaxis, ...], verbose=0)
         idx        = int(np.argmax(pred))
         confidence = float(pred[0][idx])
@@ -276,7 +278,7 @@ def predict_kata():
     extractor: FeatureExtractor = sess['extractor']
 
     try:
-        frame = cv2.flip(frame, 1)
+        # Tidak perlu flip — sudah di-mirror oleh react-webcam
         fitur, info = extractor.extract(frame)
         landmarks   = _extract_landmarks(info)
 
@@ -379,6 +381,117 @@ def predict_sign():
     return predict_huruf()
 
 
+# ── /predict/kata/batch ───────────────────────────────────────────────────────
+@ai_bp.route('/predict/kata/batch', methods=['POST'])
+def predict_kata_batch():
+    """
+    Prediksi kata dari batch frame — semua diproses sekuensial melalui
+    FeatureExtractor baru, persis seperti uji_kamera.py memproses
+    frame berurutan dari kamera.
+
+    Frontend mengumpulkan ~30 frame di browser, lalu kirim sekaligus.
+    Ini menghindari masalah frame hilang/tidak berurutan saat kirim
+    satu-satu via HTTP.
+    """
+    if not MODEL_KATA_READY:
+        return jsonify({'error': 'Model kata belum siap'}), 500
+    if not FE_AVAILABLE:
+        return jsonify({'error': 'Feature extractor tidak tersedia'}), 500
+
+    frames_files = request.files.getlist('frames')
+    if not frames_files:
+        return jsonify({'error': 'Tidak ada frame yang dikirim'}), 400
+
+    print(f"[predict_kata_batch] Menerima {len(frames_files)} frame")
+
+    try:
+        # Buat extractor baru — state bersih, sama seperti awal uji_kamera.py
+        extractor = FeatureExtractor()
+        buffer = []
+        last_detection = {
+            'right_hand': False,
+            'left_hand': False,
+            'overlapping': False,
+            'pose': False,
+        }
+
+        for f in frames_files:
+            raw   = f.read()
+            nparr = np.frombuffer(raw, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if frame is None:
+                continue
+
+            # Tidak perlu flip — sudah di-mirror oleh react-webcam
+            fitur, info = extractor.extract(frame)
+
+            ada_kanan = info['ada_kanan']
+            ada_kiri  = info['ada_kiri']
+            tumpuk    = info['tumpuk']
+            ada_pose  = info['hasil_mediapipe'].pose_landmarks is not None
+            ada_sesuatu = ada_kanan or ada_kiri or tumpuk or ada_pose
+
+            if ada_sesuatu:
+                buffer.append(fitur)
+
+            last_detection = {
+                'right_hand':  bool(ada_kanan),
+                'left_hand':   bool(ada_kiri),
+                'overlapping': bool(tumpuk),
+                'pose':        bool(ada_pose),
+            }
+
+        extractor.tutup()
+
+        print(f"[predict_kata_batch] {len(buffer)} frame valid dari {len(frames_files)} dikirim")
+
+        if len(buffer) < 5:
+            return jsonify({
+                'text':             '?',
+                'confidence':       0.0,
+                'ready':            True,
+                'found_in_db':      False,
+                'db_detail':        None,
+                'detection_status': last_detection,
+                'message':          f'Hanya {len(buffer)} frame valid dari {len(frames_files)}',
+            }), 200
+
+        # Sesuaikan panjang ke FRAME_PER_VIDEO (padding/sampling)
+        seq       = sesuaikan_panjang(buffer, FRAME_PER_VIDEO)
+        seq       = normalisasi_sekuens(seq)
+        seq_input = seq[np.newaxis, ...]
+
+        pred       = _model_kata.predict(seq_input, verbose=0)
+        idx        = int(np.argmax(pred))
+        confidence = float(pred[0][idx])
+
+        if confidence > CONFIDENCE_KATA:
+            kata = str(_encoder_kata.inverse_transform([idx])[0]).upper()
+        else:
+            kata = '?'
+
+        db_item = None
+        if kata and kata != '?':
+            db_item = KosaKata.query.filter(KosaKata.text.ilike(kata)).first()
+
+        print(f"[predict_kata_batch] Hasil: '{kata}' (confidence: {confidence:.2%})")
+
+        return jsonify({
+            'text':             kata,
+            'confidence':       round(confidence, 4),
+            'ready':            True,
+            'found_in_db':      bool(db_item),
+            'db_detail':        db_item.to_detail_dict() if db_item else None,
+            'detection_status': last_detection,
+        }), 200
+
+    except Exception as e:
+        print(f"[predict_kata_batch] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Internal server error'}), 500
+
+
 # ── /debug/hand-detection ─────────────────────────────────────────────────────
 # Endpoint khusus untuk debug: cek apakah MediaPipe bisa mendeteksi tangan
 @ai_bp.route('/debug/hand-detection', methods=['POST'])
@@ -395,7 +508,7 @@ def debug_hand_detection():
         return jsonify({'error': 'Tidak ada gambar yang dikirim'}), 400
 
     try:
-        frame = cv2.flip(frame, 1)
+        # Tidak perlu flip — sudah di-mirror oleh react-webcam
 
         # Ekstrak fitur menggunakan FeatureExtractor
         extractor_temp = FeatureExtractor()

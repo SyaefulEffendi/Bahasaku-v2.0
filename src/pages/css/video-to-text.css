@@ -25,3 +25,33 @@
 .my-2{
     text-align: center;
 }
+
+/* ── Status deteksi tangan overlay ─────────────────────────────── */
+.detection-status-bar {
+    font-size: 0.72rem;
+    font-family: 'Segoe UI', 'Consolas', monospace;
+    letter-spacing: 0.3px;
+}
+
+.detection-indicator {
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.detection-indicator.active-green {
+    color: #00dc64;
+    text-shadow: 0 0 4px rgba(0, 220, 100, 0.5);
+}
+
+.detection-indicator.active-blue {
+    color: #0096ff;
+    text-shadow: 0 0 4px rgba(0, 150, 255, 0.5);
+}
+
+.detection-indicator.active-orange {
+    color: #ff6600;
+    text-shadow: 0 0 4px rgba(255, 102, 0, 0.5);
+}
+
+.detection-indicator.inactive {
+    color: #666;
+}
