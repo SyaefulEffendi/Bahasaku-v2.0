@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context'; 
 
 // --- PERBAIKAN DI SINI (Menambahkan FaNewspaper) ---
-import { FaUsers, FaEnvelope, FaBookOpen, FaUserShield, FaSignOutAlt, FaCog, FaBars, FaTimes, FaChevronDown, FaChevronRight, FaNewspaper } from 'react-icons/fa';
+import { FaUsers, FaEnvelope, FaBookOpen, FaUserShield, FaSignOutAlt, FaCog, FaBars, FaTimes, FaChevronDown, FaChevronRight, FaNewspaper, FaBrain } from 'react-icons/fa';
 import './css/dashboardAdmin.css';
 import logoBahasaku from './Image/logo-tittle-copy-0.png';
 
@@ -17,6 +17,7 @@ import ViewFeedback from './dashboardAdmin/ViewFeedback';
 
 // --- IMPORT KOMPONEN BARU ---
 import ManageInformation from './dashboardAdmin/ManageInformation';
+import ManageDataset from './dashboardAdmin/ManageDataset';
 
 import API_BASE_URL from '../config/apiConfig'; // Sesuaikan path jika berbeda
 
@@ -122,6 +123,7 @@ const DashboardAdmin = () => {
             
             // --- MENU BARU ---
             case 'information': return <ManageInformation searchTerm={searchTerm} setSearchTerm={setSearchTerm} />;
+            case 'dataset': return <ManageDataset />;
             
             default: return (
                 <DashboardSummary 
@@ -176,6 +178,8 @@ const DashboardAdmin = () => {
 
                     {/* --- MENU BARU: KELOLA INFORMASI --- */}
                     <Nav.Link onClick={() => handleMenuClick('information')} className={`nav-link-stisla ${activeMenu === 'information' ? 'active' : ''}`}><FaNewspaper className="me-2" /> Kelola Informasi</Nav.Link>
+
+                    <Nav.Link onClick={() => handleMenuClick('dataset')} className={`nav-link-stisla ${activeMenu === 'dataset' ? 'active' : ''}`}><FaBrain className="me-2" /> Kelola Dataset AI</Nav.Link>
 
                     <Nav.Link onClick={() => handleMenuClick('feedback')} className={`nav-link-stisla ${activeMenu === 'feedback' ? 'active' : ''}`}><FaEnvelope className="me-2" /> Umpan Balik</Nav.Link>
                 </Nav>
