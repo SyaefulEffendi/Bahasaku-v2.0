@@ -147,10 +147,10 @@ const DashboardAdmin = () => {
     return (
         <div className="d-flex stisla-dashboard">
             <title>Dashboard Admin</title>
-            <div className={`sidebar text-white ${sidebarOpen ? 'open' : ''}`}>
+            <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header d-flex align-items-center p-4">
                     <img src={logoBahasaku} alt="Bahasaku Logo" className="sidebar-logo" />
-                    <h5 className="mb-0 text-white">Bahasaku</h5>
+                    <h5 className="mb-0 sidebar-title">Bahasaku</h5>
                     <Button variant="danger" className="d-lg-none ms-auto" onClick={handleToggle}><FaTimes size={20} /></Button>
                 </div>
                 <Nav className="flex-column p-4">
@@ -183,8 +183,8 @@ const DashboardAdmin = () => {
 
                     <Nav.Link onClick={() => handleMenuClick('feedback')} className={`nav-link-stisla ${activeMenu === 'feedback' ? 'active' : ''}`}><FaEnvelope className="me-2" /> Umpan Balik</Nav.Link>
                 </Nav>
-                <a href="/">
-                    <div className="mt-auto p-4"><Button variant="outline-light" className="w-100"><FaSignOutAlt className="me-2" /> Keluar dari Dashboard Admin</Button></div>
+                <a href="/" style={{textDecoration: 'none'}}>
+                    <div className="mt-auto p-4"><Button variant="outline-danger" className="w-100 fw-bold sidebar-logout-btn"><FaSignOutAlt className="me-2" /> Keluar</Button></div>
                 </a>
             </div>
 
