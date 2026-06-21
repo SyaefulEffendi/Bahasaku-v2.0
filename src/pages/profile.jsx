@@ -199,6 +199,7 @@ const Profile = () => {
                     {/* Sidebar Profil */}
                     <Col lg={4} xl={3} className="mb-4">
                         <Card className="profile-sidebar-card text-center shadow border-0">
+                            <div className="profile-cover"></div>
                             <Card.Body>
                                 <div className="profile-pic-wrapper mx-auto mb-3">
                                     <Image 
@@ -211,8 +212,8 @@ const Profile = () => {
                                         <FaCamera />
                                     </Button>
                                 </div>
-                                <h5>{formValues.full_name}</h5>
-                                <p className="text-muted small">{formValues.email}</p>
+                                <h5 className="profile-name">{formValues.full_name}</h5>
+                                <p className="profile-email mb-4">{formValues.email}</p>
 
                                 {isAdmin && (
                                     <Button variant="primary" className="mt-3 w-100" onClick={() => navigate('/dashboard-admin')}>
@@ -229,9 +230,9 @@ const Profile = () => {
                     {/* Form Detail Profil */}
                     <Col lg={8} xl={9}>
                         <Card className="profile-details-card shadow border-0">
-                            <Card.Body className="p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-4">
-                                    <h4 className="mb-0">Profil Pengguna</h4>
+                            <Card.Body className="p-4 p-md-5">
+                                <div className="d-flex justify-content-between align-items-center mb-5">
+                                    <h4 className="mb-0 profile-header-title">Profil Pengguna</h4>
                                     {isEditing ? (
                                         <div className="d-flex gap-2">
                                             <Button variant="success" onClick={handleSave} disabled={isLoading}>
@@ -300,9 +301,11 @@ const Profile = () => {
                                         </Col>
                                     </Row>
                                     <hr />
-                                    <Button variant="outline-danger" size="sm" onClick={() => setShowPasswordModal(true)}>
-                                        <FaLock className="me-2" /> Ganti Password
-                                    </Button>
+                                    <div className="d-flex justify-content-end mt-4">
+                                        <Button variant="outline-danger" onClick={() => setShowPasswordModal(true)}>
+                                            <FaLock className="me-2" /> Ganti Password
+                                        </Button>
+                                    </div>
                                 </Form>
                             </Card.Body>
                         </Card>
