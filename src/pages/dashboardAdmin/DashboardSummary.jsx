@@ -4,9 +4,11 @@ import { FaUsers, FaEnvelope, FaBookOpen, FaUser } from 'react-icons/fa';
 
 const DashboardSummary = memo(({ 
     usersCount = 0, 
+    activeUsersCount = 0,
     vocabCount = 0, 
     feedbackCount = 0, 
     adminsCount = 0,
+    activeAdminsCount = 0,
     recentFeedbacks = [] 
 }) => (
     <Container fluid className="p-0">
@@ -19,6 +21,9 @@ const DashboardSummary = memo(({
                         <FaUsers size={30} className="card-icon" />
                         <h5 className="mb-0">Total Pengguna</h5>
                         <h2 className="card-text">{usersCount}</h2>
+                        <div className="mt-2 px-3 py-1 bg-white text-success rounded-pill shadow-sm" style={{fontSize: '0.85rem', fontWeight: '600'}}>
+                            <span className="me-1">🟢</span> {activeUsersCount} Aktif Saat Ini
+                        </div>
                     </Card.Body>
                 </Card>
             </Col>
@@ -49,6 +54,9 @@ const DashboardSummary = memo(({
                         <FaUser size={30} className="card-icon" />
                         <h5 className="mb-0">Total Admin</h5>
                         <h2 className="card-text">{adminsCount}</h2>
+                        <div className="mt-2 px-3 py-1 bg-white text-primary rounded-pill shadow-sm" style={{fontSize: '0.85rem', fontWeight: '600'}}>
+                            <span className="me-1">🟢</span> {activeAdminsCount} Aktif Saat Ini
+                        </div>
                     </Card.Body>
                 </Card>
             </Col>

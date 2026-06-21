@@ -32,6 +32,26 @@ def create_app():
         allow_headers=["Content-Type", "Authorization", "X-Session-ID"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
 
+    @app.before_request
+    def update_last_active():
+        from flask import request
+        if request.method == "OPTIONS":
+            return
+        try:
+            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+            from app.models.user_model import User
+            import datetime
+            
+            verify_jwt_in_request(optional=True)
+            user_id = get_jwt_identity()
+            if user_id:
+                user = User.query.get(int(user_id))
+                if user:
+                    user.last_active = datetime.datetime.now()
+                    db.session.commit()
+        except Exception as e:
+            print("ERROR IN before_request:", str(e))
+
     from app.routes.user_routes import user_bp
     app.register_blueprint(user_bp, url_prefix='/api/users')
     
@@ -46,6 +66,9 @@ def create_app():
 
     from app.routes.information_routes import information_bp
     app.register_blueprint(information_bp, url_prefix='/api/information')
+
+    from app.routes.dataset_routes import dataset_bp
+    app.register_blueprint(dataset_bp, url_prefix='/api/dataset')
 
     @app.cli.command("create-db")
     def create_db_command():

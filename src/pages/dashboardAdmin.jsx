@@ -30,7 +30,11 @@ const DashboardAdmin = () => {
     const [searchTerm, setSearchTerm] = useState('');
     
     const [usersCount, setUsersCount] = useState(0);
+    const [activeUsersCount, setActiveUsersCount] = useState(0);
+    
     const [adminsCount, setAdminsCount] = useState(0);
+    const [activeAdminsCount, setActiveAdminsCount] = useState(0);
+    
     const [vocabCount, setVocabCount] = useState(0);
     const [feedbackCount, setFeedbackCount] = useState(0);
     
@@ -65,11 +69,27 @@ const DashboardAdmin = () => {
                 const usersResponse = await fetch(`${API_BASE_URL}/users/`, { method: 'GET', headers });
                 if (usersResponse.ok) {
                     const usersData = await usersResponse.json();
+                    
+                    const now = new Date();
+                    // Dianggap aktif jika last_active dalam 15 menit terakhir
+                    const isActive = (last_active_str) => {
+                        if (!last_active_str) return false;
+                        const lastActive = new Date(last_active_str);
+                        const diffMins = (now - lastActive) / (1000 * 60);
+                        return diffMins <= 15;
+                    };
+
                     const onlyUsers = usersData.filter(u => (u.role || '').toLowerCase() === 'user');
+                    const activeUsers = onlyUsers.filter(u => isActive(u.last_active));
+                    
                     const onlyAdmins = usersData.filter(u => (u.role || '').toLowerCase() === 'admin');
+                    const activeAdmins = onlyAdmins.filter(u => isActive(u.last_active));
                     
                     setUsersCount(onlyUsers.length);
+                    setActiveUsersCount(activeUsers.length);
+                    
                     setAdminsCount(onlyAdmins.length);
+                    setActiveAdminsCount(activeAdmins.length);
                 }
 
                 // Fetch Vocab
@@ -128,7 +148,9 @@ const DashboardAdmin = () => {
             default: return (
                 <DashboardSummary 
                     usersCount={usersCount}
+                    activeUsersCount={activeUsersCount}
                     adminsCount={adminsCount}
+                    activeAdminsCount={activeAdminsCount}
                     vocabCount={vocabCount}
                     feedbackCount={feedbackCount}
                     recentFeedbacks={recentFeedbacks}

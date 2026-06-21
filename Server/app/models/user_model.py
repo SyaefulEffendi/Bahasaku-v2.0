@@ -28,6 +28,8 @@ class User(db.Model):
     role = db.Column(db.Enum(*ROLES, name='role_enum'), nullable=False, default='User')
     
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    
+    last_active = db.Column(db.DateTime(timezone=True), nullable=True)
 
     # ========= Fungsi Keamanan =========
 
@@ -53,7 +55,8 @@ class User(db.Model):
             "birth_date": self.birth_date.isoformat() if self.birth_date else None,
             "profile_pic_url": self.profile_pic_url,
             "role": self.role,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_active": self.last_active.isoformat() if self.last_active else None
         }
 
     def __repr__(self):
