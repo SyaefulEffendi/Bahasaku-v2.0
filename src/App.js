@@ -11,6 +11,7 @@ import TextToVideo from './pages/text-to-video';
 import VideoToText from './pages/video-to-text';
 import DashboardAdmin from './pages/dashboardAdmin';
 import Profile from './pages/profile';
+import NotFound from './pages/NotFound';
 import { AuthProvider } from './context'; 
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
             <Route path="/video-to-text" element={<VideoToText />} />
             <Route path="/dashboard-admin" element={<DashboardAdmin />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
       </Router>
