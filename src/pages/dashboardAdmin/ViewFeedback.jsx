@@ -2,6 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { Container, Table, Button, Badge, Modal, Form } from 'react-bootstrap';
 
 import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
+import Swal from 'sweetalert2';
 
 const ViewFeedback = memo(() => {
     const [feedbacks, setFeedbacks] = useState([]);
@@ -48,9 +49,15 @@ const ViewFeedback = memo(() => {
 
     // Fungsi menghapus feedback
     const handleDelete = async (feedbackId) => {
-        if (!window.confirm('Apakah Anda yakin ingin menghapus feedback ini?')) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'Konfirmasi',
+            text: 'Apakah Anda yakin ingin menghapus feedback ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        });
+        if (!result.isConfirmed) return;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -72,7 +79,7 @@ const ViewFeedback = memo(() => {
             }
 
             await fetchFeedbacks();
-            alert('Feedback berhasil dihapus.');
+            Swal.fire('Sukses', 'Feedback berhasil dihapus.', 'success');
         } catch (err) {
             console.error('Error deleting feedback:', err);
             setError(`Gagal menghapus feedback: ${err.message}`);
@@ -98,7 +105,7 @@ const ViewFeedback = memo(() => {
         try {
             const token = localStorage.getItem('authToken');
             if (!token) {
-                alert('Token tidak ditemukan. Silakan login ulang.');
+                Swal.fire('Error', 'Token tidak ditemukan. Silakan login ulang.', 'error');
                 return;
             }
 
@@ -112,16 +119,16 @@ const ViewFeedback = memo(() => {
             });
 
             if (!response.ok) {
-                alert('Gagal mengupdate status.');
+                Swal.fire('Error', 'Gagal mengupdate status.', 'error');
                 return;
             }
 
-            alert('Status berhasil diperbarui!');
+            Swal.fire('Sukses', 'Status berhasil diperbarui!', 'success');
             setShowModal(false);
             fetchFeedbacks(); // Refresh tabel
         } catch (err) {
             console.error('Error updating status:', err);
-            alert(`Terjadi kesalahan: ${err.message}`);
+            Swal.fire('Error', `Terjadi kesalahan: ${err.message}`, 'error');
         }
     };
 
