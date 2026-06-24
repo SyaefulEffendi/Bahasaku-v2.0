@@ -9,7 +9,7 @@ import './css/text-to-video.css';
 import API_BASE_URL, { SERVER_URL } from '../config/apiConfig';
 
 function TextToVideo() {
-    const [showModal, setShowModal] = useState(true); // Tampilkan modal di awal
+    const [showModal, setShowModal] = useState(false); // Jangan tampilkan modal di awal karena fitur disabled
     const [inputText, setInputText] = useState('');
     const [videoSrc, setVideoSrc] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -74,6 +74,9 @@ function TextToVideo() {
                                     <h2 className="my-2">Penerjemah Teks ke Video</h2>
                                 </Card.Header>
                                 <Card.Body className="p-4">
+                                    <Alert variant="warning" className="text-center mb-4 fw-bold shadow-sm">
+                                        Mohon maaf, fitur Text to Video ini masih dalam tahap pengembangan dan belum dapat digunakan saat ini.
+                                    </Alert>
                                     <div className="video-section text-center mb-4">
                                         {isLoading ? (
                                             <div className="video-placeholder d-flex flex-column align-items-center justify-content-center">
@@ -95,7 +98,7 @@ function TextToVideo() {
                                         )}
                                     </div>
                                     <div className="text-center">
-                                        <Button variant="primary" onClick={() => setShowModal(true)}>
+                                        <Button variant="primary" onClick={() => setShowModal(true)} disabled>
                                             <FaKeyboard className="me-2" /> Masukkan Teks
                                         </Button>
                                     </div>
