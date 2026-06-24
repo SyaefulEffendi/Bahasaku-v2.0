@@ -25,6 +25,7 @@ function VideoToText() {
     const [isCamReady, setIsCamReady]     = useState(false);
     const [mode, setMode]                 = useState('huruf');
     const [translation, setTranslation]   = useState('');
+    const [kalimat, setKalimat]           = useState([]);
     const [confidence, setConfidence]     = useState(0);
     const [dbResult, setDbResult]         = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -257,6 +258,14 @@ function VideoToText() {
 
             if (data.text) {
                 setTranslation(data.text);
+                if (data.text !== '?') {
+                    setKalimat(prev => {
+                        if (prev.length === 0 || prev[prev.length - 1].toLowerCase() !== data.text.toLowerCase()) {
+                            return [...prev, data.text];
+                        }
+                        return prev;
+                    });
+                }
                 setConfidence(Math.round((data.confidence || 0) * 100));
                 setDbResult(data.found_in_db && data.db_detail ? data.db_detail : null);
             }
@@ -301,6 +310,7 @@ function VideoToText() {
     const startCamera = () => {
         setCamError('');
         setTranslation('');
+        setKalimat([]);
         setDbResult(null);
         setConfidence(0);
         setBufferCount(0);
@@ -325,6 +335,7 @@ function VideoToText() {
         setIsCamReady(false);
         isCamReadyRef.current = false;
         setTranslation('');
+        setKalimat([]);
         setDbResult(null);
         setConfidence(0);
         setBufferCount(0);
@@ -350,6 +361,7 @@ function VideoToText() {
 
         // Reset state
         setTranslation('');
+        setKalimat([]);
         setDbResult(null);
         setConfidence(0);
         setBufferCount(0);
@@ -379,6 +391,7 @@ function VideoToText() {
     // ── Reset ────────────────────────────────────────────────────────────────
     const resetAll = () => {
         setTranslation('');
+        setKalimat([]);
         setDbResult(null);
         setConfidence(0);
         setBufferCount(0);
@@ -591,30 +604,30 @@ function VideoToText() {
                                         <h5 className="text-center text-primary mb-3">Hasil Terjemahan:</h5>
 
                                         <Card
-                                            className="text-center p-4 shadow-sm flex-grow-1 d-flex align-items-center justify-content-center"
+                                            className="text-center p-3 shadow-sm mb-3 d-flex align-items-center justify-content-center"
                                             style={{
                                                 border: '2px dashed #0d6efd',
                                                 backgroundColor: '#f0f8ff',
-                                                minHeight: '180px',
+                                                minHeight: '120px',
                                                 overflow: 'hidden',
                                             }}
                                         >
                                             <div style={{ width: '100%', overflow: 'hidden' }}>
-                                                <h1
+                                                <h2
                                                     className={`fw-bold mb-0 ${translation === '?' ? 'text-muted' : 'text-dark'}`}
                                                     style={{
-                                                        fontSize: 'clamp(1.5rem, 5vw, 4rem)',
+                                                        fontSize: 'clamp(1.5rem, 4vw, 3rem)',
                                                         wordBreak: 'break-word',
                                                         overflowWrap: 'break-word',
                                                     }}
                                                 >
                                                     {translation || '-'}
-                                                </h1>
+                                                </h2>
                                                 <p className="text-muted mt-2 mb-0 small">
                                                     {translation
                                                         ? translation === '?'
                                                             ? 'Confidence rendah, coba ulangi gerakan'
-                                                            : `${mode === 'huruf' ? 'Huruf' : 'Kata'} terdeteksi`
+                                                            : `${mode === 'huruf' ? 'Huruf' : 'Kata'} terakhir terdeteksi`
                                                         : isProcessing && mode === 'kata'
                                                             ? 'Memproses prediksi kata...'
                                                             : mode === 'kata' && isCameraOpen && isCapturing
@@ -623,6 +636,26 @@ function VideoToText() {
                                                 </p>
                                             </div>
                                         </Card>
+
+                                        {/* Tampilan Kalimat - HANYA UNTUK MODE KATA */}
+                                        {mode === 'kata' && (
+                                            <Card className="p-3 shadow-sm flex-grow-1 border-0" style={{ borderLeft: '4px solid #0d6efd', backgroundColor: '#fff' }}>
+                                                <div className="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 className="mb-0 fw-bold text-primary">Kalimat yang Terbentuk:</h6>
+                                                    <div className="d-flex gap-2">
+                                                        <Button variant="outline-warning" size="sm" onClick={() => setKalimat(prev => prev.slice(0, -1))} disabled={kalimat.length === 0} title="Hapus kata terakhir">
+                                                            Hapus 1 Kata
+                                                        </Button>
+                                                        <Button variant="outline-danger" size="sm" onClick={() => setKalimat([])} disabled={kalimat.length === 0} title="Hapus semua kalimat">
+                                                            Kosongkan
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                <p className="fs-5 mb-0 text-dark" style={{ minHeight: '60px', wordBreak: 'break-word' }}>
+                                                    {kalimat.length > 0 ? kalimat.join(' ') : <span className="text-muted fst-italic">Belum ada kalimat...</span>}
+                                                </p>
+                                            </Card>
+                                        )}
 
                                         {/* Confidence bar */}
                                         {translation && translation !== '?' && confidence > 0 && (
