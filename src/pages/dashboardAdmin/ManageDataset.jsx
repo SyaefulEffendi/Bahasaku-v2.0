@@ -6,7 +6,7 @@ import axios from 'axios';
 import API_BASE_URL from '../../config/apiConfig';
 import { Holistic, HAND_CONNECTIONS, POSE_CONNECTIONS } from '@mediapipe/holistic';
 import { drawConnectors, drawLandmarks as mpDrawLandmarks } from '@mediapipe/drawing_utils';
-
+import Swal from 'sweetalert2';
 const FRAME_PER_VIDEO = 30;
 
 const ManageDataset = () => {
@@ -242,7 +242,15 @@ const ManageDataset = () => {
 
     // --- TRAIN MODEL ---
     const handleTrain = async (tipe) => {
-        if (!window.confirm(`Yakin ingin melakukan training ulang untuk model ${tipe.toUpperCase()}? Proses ini bisa memakan waktu beberapa menit.`)) return;
+        const result = await Swal.fire({
+            title: 'Konfirmasi',
+            text: `Yakin ingin melakukan training ulang untuk model ${tipe.toUpperCase()}? Proses ini bisa memakan waktu beberapa menit.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'OK',
+            cancelButtonText: 'Cancel'
+        });
+        if (!result.isConfirmed) return;
 
         setIsTraining(true);
         setTrainLog('Memulai proses training... Mohon tunggu, proses ini akan berjalan di latar belakang.\n');

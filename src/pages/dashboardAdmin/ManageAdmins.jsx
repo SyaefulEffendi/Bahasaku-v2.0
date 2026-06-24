@@ -4,6 +4,7 @@ import { FaPlus } from 'react-icons/fa';
 import SearchInput from './SearchInput';
 
 import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
+import Swal from 'sweetalert2';
 
 const ManageAdmins = memo(({ searchTerm, setSearchTerm }) => {
     const [admins, setAdmins] = useState([]);
@@ -90,9 +91,15 @@ const ManageAdmins = memo(({ searchTerm, setSearchTerm }) => {
     }, [searchTerm, admins]);
 
     const handleDelete = async (adminId) => {
-        if (!window.confirm('Apakah Anda yakin ingin menghapus admin ini?')) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'Konfirmasi',
+            text: 'Apakah Anda yakin ingin menghapus admin ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        });
+        if (!result.isConfirmed) return;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -116,7 +123,7 @@ const ManageAdmins = memo(({ searchTerm, setSearchTerm }) => {
             // Refresh data
             // Re-fetch list to be safe
             await fetchAdmins();
-            alert('Admin berhasil dihapus.');
+            Swal.fire('Sukses', 'Admin berhasil dihapus.', 'success');
         } catch (err) {
             console.error('Error deleting admin:', err);
             setError(`Gagal menghapus admin: ${err.message}`);
@@ -181,7 +188,7 @@ const ManageAdmins = memo(({ searchTerm, setSearchTerm }) => {
 
             setShowAddModal(false);
             await fetchAdmins();
-            alert('Admin berhasil ditambahkan');
+            Swal.fire('Sukses', 'Admin berhasil ditambahkan', 'success');
         } catch (err) {
             console.error('Error adding admin:', err);
             setError(err.message || 'Gagal menambah admin');
@@ -228,7 +235,7 @@ const ManageAdmins = memo(({ searchTerm, setSearchTerm }) => {
             setShowEditModal(false);
             setEditAdmin(null);
             await fetchAdmins();
-            alert('Admin berhasil diperbarui');
+            Swal.fire('Sukses', 'Admin berhasil diperbarui', 'success');
         } catch (err) {
             console.error('Error updating admin:', err);
             setError(err.message || 'Gagal memperbarui admin');

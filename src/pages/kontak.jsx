@@ -10,6 +10,7 @@ import shapeRight from './Image/kontak-kanan-atas.png';
 import shapeLeft from './Image/kontak-kiri-bawah.png';
 
 import API_BASE_URL from '../config/apiConfig'; // Sesuaikan path jika berbeda
+import Swal from 'sweetalert2';
 
 function Kontak() {
     const [dataForm, setDataForm] = useState({
@@ -81,13 +82,13 @@ function Kontak() {
     const Submit = (e) => {
         e.preventDefault();
         if (!isLoggedIn) {
-            alert("Anda harus login terlebih dahulu untuk mengirim pesan.");
+            Swal.fire('Error', 'Anda harus login terlebih dahulu untuk mengirim pesan.', 'error');
             return;
         }
         if (dataForm.namaLengkap && dataForm.alamatEmail && dataForm.pesan) {
             setPopUp(true);
         } else {
-            alert("Harap isi semua kolom yang wajib diisi.");
+            Swal.fire('Error', 'Harap isi semua kolom yang wajib diisi.', 'error');
         }
     };
 
@@ -115,17 +116,17 @@ function Kontak() {
             });
 
             if (response.ok) {
-                alert("Pesan Anda berhasil dikirim!");
+                Swal.fire('Sukses', 'Pesan Anda berhasil dikirim!', 'success');
                 // Reset pesan saja, nama dan email tetap biarkan karena user masih login
                 setDataForm(prev => ({ ...prev, pesan: '' }));
                 setPopUp(false);
             } else {
                 const errorData = await response.json();
-                alert(`Gagal mengirim pesan: ${errorData.error || 'Terjadi kesalahan'}`);
+                Swal.fire('Error', `Gagal mengirim pesan: ${errorData.error || 'Terjadi kesalahan'}`, 'error');
             }
         } catch (error) {
             console.error("Error submitting feedback:", error);
-            alert("Terjadi kesalahan koneksi server.");
+            Swal.fire('Error', 'Terjadi kesalahan koneksi server.', 'error');
         } finally {
             setIsLoading(false);
         }

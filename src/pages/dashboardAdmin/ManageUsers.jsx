@@ -4,6 +4,7 @@ import { FaPlus } from 'react-icons/fa';
 import SearchInput from './SearchInput';
 
 import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
+import Swal from 'sweetalert2';
 
 const ManageUsers = memo(({ searchTerm, setSearchTerm }) => {
     const [users, setUsers] = useState([]);
@@ -90,9 +91,15 @@ const ManageUsers = memo(({ searchTerm, setSearchTerm }) => {
     }, [searchTerm, users]);
 
     const handleDelete = async (userId) => {
-        if (!window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'Konfirmasi',
+            text: 'Apakah Anda yakin ingin menghapus user ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        });
+        if (!result.isConfirmed) return;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -116,7 +123,7 @@ const ManageUsers = memo(({ searchTerm, setSearchTerm }) => {
             // Refresh data
             // Re-fetch list to be safe
             await fetchUsers();
-            alert('User berhasil dihapus.');
+            Swal.fire('Sukses', 'User berhasil dihapus.', 'success');
         } catch (err) {
             console.error('Error deleting user:', err);
             setError(`Gagal menghapus user: ${err.message}`);
@@ -180,7 +187,7 @@ const ManageUsers = memo(({ searchTerm, setSearchTerm }) => {
 
             setShowAddModal(false);
             await fetchUsers();
-            alert('User berhasil ditambahkan');
+            Swal.fire('Sukses', 'User berhasil ditambahkan', 'success');
         } catch (err) {
             console.error('Error adding user:', err);
             setError(err.message || 'Gagal menambah user');
@@ -227,7 +234,7 @@ const ManageUsers = memo(({ searchTerm, setSearchTerm }) => {
             setShowEditModal(false);
             setEditUser(null);
             await fetchUsers();
-            alert('User berhasil diperbarui');
+            Swal.fire('Sukses', 'User berhasil diperbarui', 'success');
         } catch (err) {
             console.error('Error updating user:', err);
             setError(err.message || 'Gagal memperbarui user');

@@ -4,6 +4,7 @@ import { FaPlus } from 'react-icons/fa';
 import SearchInput from './SearchInput';
 
 import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
+import Swal from 'sweetalert2';
 
 const ManageVocabulary = memo(({ searchTerm, setSearchTerm }) => {
     const [vocabs, setVocabs] = useState([]);
@@ -59,9 +60,15 @@ const ManageVocabulary = memo(({ searchTerm, setSearchTerm }) => {
     }, [searchTerm, vocabs]);
 
     const handleDelete = async (vocabId) => {
-        if (!window.confirm('Apakah Anda yakin ingin menghapus kosakata ini?')) {
-            return;
-        }
+        const result = await Swal.fire({
+            title: 'Konfirmasi',
+            text: 'Apakah Anda yakin ingin menghapus kosakata ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        });
+        if (!result.isConfirmed) return;
 
         try {
             const token = localStorage.getItem('authToken');
@@ -83,7 +90,7 @@ const ManageVocabulary = memo(({ searchTerm, setSearchTerm }) => {
             }
 
             await fetchVocabs();
-            alert('Kosakata berhasil dihapus.');
+            Swal.fire('Sukses', 'Kosakata berhasil dihapus.', 'success');
         } catch (err) {
             console.error('Error deleting vocab:', err);
             setError(`Gagal menghapus kosakata: ${err.message}`);
@@ -146,7 +153,7 @@ const ManageVocabulary = memo(({ searchTerm, setSearchTerm }) => {
 
             setShowAddModal(false);
             await fetchVocabs();
-            alert('Kosakata berhasil ditambahkan');
+            Swal.fire('Sukses', 'Kosakata berhasil ditambahkan', 'success');
         } catch (err) {
             console.error('Error adding vocab:', err);
             setError(err.message || 'Gagal menambah kosakata');
@@ -187,7 +194,7 @@ const ManageVocabulary = memo(({ searchTerm, setSearchTerm }) => {
             setShowEditModal(false);
             setEditVocab(null);
             await fetchVocabs();
-            alert('Kosakata berhasil diperbarui');
+            Swal.fire('Sukses', 'Kosakata berhasil diperbarui', 'success');
         } catch (err) {
             console.error('Error updating vocab:', err);
             setError(err.message || 'Gagal memperbarui kosakata');

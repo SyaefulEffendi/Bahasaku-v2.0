@@ -4,6 +4,7 @@ import { FaPlus, FaTrash, FaEdit } from 'react-icons/fa'; // Tambah FaEdit
 import SearchInput from './SearchInput';
 
 import API_BASE_URL from '../../config/apiConfig'; // Sesuaikan path jika berbeda
+import Swal from 'sweetalert2';
 
 const ManageInformation = memo(({ searchTerm, setSearchTerm }) => {
     const [infos, setInfos] = useState([]);
@@ -102,14 +103,22 @@ const ManageInformation = memo(({ searchTerm, setSearchTerm }) => {
             if (!response.ok) throw new Error('Gagal menyimpan data');
             
             await fetchInfos();
-            alert(`Berhasil ${method === 'POST' ? 'menambahkan' : 'memperbarui'} informasi!`);
+            Swal.fire('Sukses', `Berhasil ${method === 'POST' ? 'menambahkan' : 'memperbarui'} informasi!`, 'success');
         } catch (err) {
-            alert(err.message);
+            Swal.fire('Error', err.message, 'error');
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Yakin hapus?')) return;
+        const result = await Swal.fire({
+            title: 'Konfirmasi',
+            text: 'Yakin hapus?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        });
+        if (!result.isConfirmed) return;
         try {
             const token = localStorage.getItem('authToken');
             await fetch(`${API_BASE_URL}/information/${id}`, {
@@ -118,7 +127,7 @@ const ManageInformation = memo(({ searchTerm, setSearchTerm }) => {
             });
             await fetchInfos();
         } catch (err) {
-            alert('Gagal menghapus');
+            Swal.fire('Error', 'Gagal menghapus', 'error');
         }
     };
 
