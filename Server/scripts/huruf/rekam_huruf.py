@@ -20,7 +20,7 @@ from feature_extractor import FeatureExtractor, N_FITUR
 # ════════════════════════════════════════════════════════════════
 TARGET_HURUF  = 'D'     # ← UBAH INI setiap ganti huruf (A-Z)
 TARGET_JUMLAH = 200     # jumlah sampel per huruf
-CSV_DIR  = r'D:\Syaeful\Kuliah\Semester 4\Bahasaku V2\web\Server\dataset\huruf'
+CSV_DIR  = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dataset', 'huruf'))
 # ════════════════════════════════════════════════════════════════
 
 CSV_PATH = os.path.join(CSV_DIR, 'dataset_huruf.csv')

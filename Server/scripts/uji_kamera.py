@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kat
 from feature_extractor import FeatureExtractor, N_FITUR, normalisasi_sekuens
 
 # ════════════════════════════════════════════════════════════════
-MODEL_DIR       = r'D:\Syaeful\Kuliah\Semester 4\Bahasaku V2\web\Server\app\models_ml'
+MODEL_DIR       = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'models_ml'))
 CONFIDENCE_HURUF = 0.65
 CONFIDENCE_KATA  = 0.65
 FRAME_PER_KATA   = 30

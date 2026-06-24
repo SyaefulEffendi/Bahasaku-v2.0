@@ -15,7 +15,7 @@ hands = mp_hands.Hands(
 # ============================================================
 # UBAH DI SINI setiap ganti kata
 TARGET_KATA  = 'hallo'
-FOLDER_VIDEO = r'D:\Syaeful\video_bisindo\hallo'  # ← path absolut, bebas taruh di mana saja
+FOLDER_VIDEO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dataset', 'video_bisindo', 'hallo'))  # ← path relatif ke dataset
 # ============================================================
 
 KATA_1_TANGAN   = {'hallo', 'aku'}

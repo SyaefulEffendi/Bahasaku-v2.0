@@ -26,7 +26,7 @@ TARGET_VIDEO = 50            # jumlah video per kata (jangan dikurangi)
 # ════════════════════════════════════════════════════════════════════
 
 FRAME_PER_VIDEO = 30
-CSV_DIR  = r'D:\Syaeful\Kuliah\Semester 4\Bahasaku V2\web\Server\dataset\kata'
+CSV_DIR  = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dataset', 'kata'))
 CSV_PATH = os.path.join(CSV_DIR, 'dataset_kata.csv')
 os.makedirs(CSV_DIR, exist_ok=True)
 

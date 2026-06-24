@@ -27,8 +27,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from feature_extractor import N_FITUR
 
 # ════════════════════════════════════════════════════════════════════
-CSV_PATH  = r'D:\Syaeful\Kuliah\Semester 4\Bahasaku V2\web\Server\dataset\kata\dataset_kata.csv'
-MODEL_DIR = r'D:\Syaeful\Kuliah\Semester 4\Bahasaku V2\web\Server\app\models_ml'
+CSV_PATH  = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'dataset', 'kata', 'dataset_kata.csv'))
+MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'app', 'models_ml'))
 FRAME_PER_VIDEO = 30
 # ════════════════════════════════════════════════════════════════════
 
