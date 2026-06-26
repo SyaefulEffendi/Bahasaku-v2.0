@@ -25,3 +25,4 @@ scikit-learn==1.4.1.post1
 mediapipe==0.10.14
 tensorflow==2.16.2
 protobuf==4.25.3
+seaborn
