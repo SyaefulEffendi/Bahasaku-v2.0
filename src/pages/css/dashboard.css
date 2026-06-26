@@ -288,33 +288,20 @@ body {
 
 .card-image-container {
     width: 100%;
-    height: 200px; 
+    height: 250px; 
     display: flex;
     justify-content: center;
     align-items: center;
     margin-bottom: 1rem;
 }
 
-.card-image-1 {
-    width: 60% !important; 
-    height: auto !important;
-    object-fit: contain !important;
-}
-
-.card-image-2 {
-    width: 50% !important;
-    height: auto !important;
-    object-fit: contain !important;
-}
-
-.card-image-3 {
-    width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-}
-
+.card-image-1,
+.card-image-2,
+.card-image-3,
 .card-image-4 {
-    width: 50% !important;
+    max-width: 90% !important; 
+    max-height: 100% !important;
+    width: auto !important;
     height: auto !important;
     object-fit: contain !important;
 }
