@@ -51,44 +51,62 @@ FRAME_PER_VIDEO  = 30
 # ─────────────────────────────────────────────────────────────────────────────
 # Load semua model (sekali saat startup)
 # ─────────────────────────────────────────────────────────────────────────────
-print("=" * 55)
-print("[ai_routes] Memuat model ML...")
+_huruf_path = None
+_model_huruf = None
+_encoder_huruf = None
+MODEL_HURUF_READY = False
 
-# --- Model huruf ---
-try:
-    _huruf_path = os.path.join(MODEL_DIR, 'model_huruf.keras')
-    if not os.path.exists(_huruf_path):
-        _huruf_path = os.path.join(MODEL_DIR, 'model_huruf.h5')
+_kata_path = None
+_model_kata = None
+_encoder_kata = None
+MODEL_KATA_READY = False
 
-    _model_huruf = tf.keras.models.load_model(_huruf_path)
-    with open(os.path.join(MODEL_DIR, 'label_encoder_huruf.pkl'), 'rb') as f:
-        _encoder_huruf = pickle.load(f)
+def reload_models():
+    """Memuat ulang model dari disk ke memory tanpa perlu restart server"""
+    global _huruf_path, _model_huruf, _encoder_huruf, MODEL_HURUF_READY
+    global _kata_path, _model_kata, _encoder_kata, MODEL_KATA_READY
+    
+    print("=" * 55)
+    print("[ai_routes] Memuat model ML...")
 
-    MODEL_HURUF_READY = True
-    print(f"[ai_routes] ✓ Model huruf berhasil dimuat dari {os.path.basename(_huruf_path)}")
-    print(f"[ai_routes]   Huruf: {list(_encoder_huruf.classes_)}")
-except Exception as e:
-    MODEL_HURUF_READY = False
-    print(f"[ai_routes] ✗ Gagal memuat model huruf: {e}")
+    # --- Model huruf ---
+    try:
+        _huruf_path = os.path.join(MODEL_DIR, 'model_huruf.keras')
+        if not os.path.exists(_huruf_path):
+            _huruf_path = os.path.join(MODEL_DIR, 'model_huruf.h5')
 
-# --- Model kata ---
-try:
-    if not FE_AVAILABLE:
-        raise ImportError("feature_extractor tidak tersedia")
-    _kata_path = os.path.join(MODEL_DIR, 'model_kata.keras')
-    if not os.path.exists(_kata_path):
-        _kata_path = os.path.join(MODEL_DIR, 'model_kata.h5')
-    _model_kata = tf.keras.models.load_model(_kata_path)
-    with open(os.path.join(MODEL_DIR, 'label_encoder_kata.pkl'), 'rb') as f:
-        _encoder_kata = pickle.load(f)
-    MODEL_KATA_READY = True
-    print(f"[ai_routes] ✓ Model kata dimuat dari {os.path.basename(_kata_path)}")
-    print(f"[ai_routes]   Kata: {list(_encoder_kata.classes_)}")
-except Exception as e:
-    MODEL_KATA_READY = False
-    print(f"[ai_routes] ✗ Gagal memuat model kata: {e}")
+        _model_huruf = tf.keras.models.load_model(_huruf_path)
+        with open(os.path.join(MODEL_DIR, 'label_encoder_huruf.pkl'), 'rb') as f:
+            _encoder_huruf = pickle.load(f)
 
-print("=" * 55)
+        MODEL_HURUF_READY = True
+        print(f"[ai_routes] ✓ Model huruf berhasil dimuat dari {os.path.basename(_huruf_path)}")
+        print(f"[ai_routes]   Huruf: {list(_encoder_huruf.classes_)}")
+    except Exception as e:
+        MODEL_HURUF_READY = False
+        print(f"[ai_routes] ✗ Gagal memuat model huruf: {e}")
+
+    # --- Model kata ---
+    try:
+        if not FE_AVAILABLE:
+            raise ImportError("feature_extractor tidak tersedia")
+        _kata_path = os.path.join(MODEL_DIR, 'model_kata.keras')
+        if not os.path.exists(_kata_path):
+            _kata_path = os.path.join(MODEL_DIR, 'model_kata.h5')
+        _model_kata = tf.keras.models.load_model(_kata_path)
+        with open(os.path.join(MODEL_DIR, 'label_encoder_kata.pkl'), 'rb') as f:
+            _encoder_kata = pickle.load(f)
+        MODEL_KATA_READY = True
+        print(f"[ai_routes] ✓ Model kata dimuat dari {os.path.basename(_kata_path)}")
+        print(f"[ai_routes]   Kata: {list(_encoder_kata.classes_)}")
+    except Exception as e:
+        MODEL_KATA_READY = False
+        print(f"[ai_routes] ✗ Gagal memuat model kata: {e}")
+
+    print("=" * 55)
+
+# Panggil sekali saat startup
+reload_models()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Session buffer — satu session menyimpan extractor + buffer kata

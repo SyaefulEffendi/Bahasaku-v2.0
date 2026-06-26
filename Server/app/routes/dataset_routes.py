@@ -213,8 +213,12 @@ def train_model(tipe):
         )
 
         if result.returncode == 0:
+            # Reload models into memory so restart is not needed
+            from app.routes.ai_routes import reload_models
+            reload_models()
+            
             return jsonify({
-                'message': f'Training {tipe} selesai',
+                'message': f'Training {tipe} selesai dan model berhasil dimuat ulang',
                 'log': result.stdout
             }), 200
         else:
